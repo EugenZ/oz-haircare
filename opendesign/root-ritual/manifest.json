@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "od-design-system-project/v1",
+  "id": "root-ritual",
+  "name": "ROOT / RITUAL",
+  "category": "Health & Wellness",
+  "description": "Warm editorial design system for a bilingual trichology and hair-restoration practice.",
+  "source": {
+    "type": "local",
+    "path": "C:/Users/SkxWxlkxr/Documents/Codex/2026-08-16/root-ritual-bilingual-site/opendesign/root-ritual"
+  },
+  "files": {
+    "design": "DESIGN.md",
+    "tokens": "tokens.css"
+  },
+  "importMode": "normalized",
+  "craft": {
+    "applies": [],
+    "suggested": [
+      "color",
+      "accessibility-baseline"
+    ],
+    "exemptions": []
+  }
+}

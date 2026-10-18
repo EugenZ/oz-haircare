@@ -7,17 +7,70 @@ Instagram links, gallery, journal, and booking form interface.
 This workspace is source-only for self-hosting. No new deployment is part of
 this export.
 
-## Prerequisites
+## Installation
 
-- Node.js `>=22.13.0`
+### Prerequisites
 
-## Quick Start
+- [Node.js](https://nodejs.org/) `22.13.0` or newer. Check with `node -v`.
+- npm, which ships with Node.js. Check with `npm -v`.
+- Git
+
+A local preview does not need environment variables, API keys, or a Cloudflare account.
+
+### 1. Clone the repository
 
 ```bash
-npm install
-npm run dev
-npm run build
+git clone https://github.com/TheKriserOne/root-ritual-bilingual-site.git
+cd root-ritual-bilingual-site
 ```
+
+### 2. Install dependencies
+
+```bash
+npm ci
+```
+
+`npm ci` installs the exact versions recorded in `package-lock.json`. Use `npm install` only when you intend to change dependencies.
+
+### 3. Start the development server
+
+```bash
+npm run dev
+```
+
+Open the address printed in the terminal, usually `http://localhost:3000`. These commands are the same in Windows PowerShell, macOS, and Linux.
+
+### 4. Check the production build
+
+```bash
+npm test
+```
+
+`npm test` builds the site and checks the rendered page. To build and serve that output without the test:
+
+```bash
+npm run build
+npm run start
+```
+
+## OpenDesign
+
+The site includes a portable OpenDesign design-system package at
+`opendesign/root-ritual`. Its `tokens.css` is imported by the live site, so
+color, typography, spacing, motion, and layout token changes flow into the
+real vinext build.
+
+1. In OpenDesign, import this repository as an existing local folder.
+2. Import `opendesign/root-ritual` from the Design System screen.
+3. Select **ROOT / RITUAL** as the active design system.
+4. Use the Codex local runtime for source-backed changes.
+5. Ask OpenDesign to preserve RU/EN copy, language switching, mobile
+   navigation, treatment dialogs, gallery, journal, and booking behavior.
+6. Run `npm test` before accepting a generated change.
+
+OpenDesign's manual canvas editor applies to generated HTML artifacts. Changes
+to this React/vinext application should use its agent or code-migration flow,
+then be reviewed as a Git diff. The initial Git commit is the rollback point.
 
 This starter does not use `wrangler.jsonc`.
 
@@ -96,8 +149,9 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 - Replace stock images with the specialist's own photos when available.
 - Connect the booking form to email, a CRM, or a server endpoint before using
   it for real appointments. The current form only shows a local confirmation.
-- On Windows PowerShell, use npx vinext dev and npx vinext build if the
-  POSIX-style environment variable in the npm scripts is not recognized.
+- OpenDesign should modify visual foundations through
+  `opendesign/root-ritual/tokens.css` and structural styling through
+  `app/globals.css`.
 
 ## Useful Commands
 

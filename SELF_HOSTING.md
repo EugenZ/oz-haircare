@@ -7,11 +7,16 @@ credentials, the local node_modules folder, or the previous Sites metadata.
 
 1. Install Node.js 22.13 or newer.
 2. Run npm install.
-3. Run npx vinext dev for a local preview.
-4. Run npx vinext build before publishing.
+3. Run npm run dev for a local preview.
+4. Run npm test before publishing.
 
 The app is a vinext / Cloudflare Worker-compatible project. Use a host that
 supports that output, or adapt the build output to your chosen platform.
+
+The optional `opendesign/root-ritual` folder is a portable design-system
+package. Keep it when design work will continue in OpenDesign. The production
+site imports its `tokens.css`, so do not remove that folder without first
+moving those token values into `app/globals.css`.
 
 ## Before real use
 

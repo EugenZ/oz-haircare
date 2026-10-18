@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const developmentPreviewMeta =
-  /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
-const templateRoot = new URL("../", import.meta.url);
-const previewRoot = new URL("../app/_sites-preview/", import.meta.url);
+const projectRoot = new URL("../", import.meta.url);
+const designSystemRoot = new URL("../opendesign/root-ritual/", import.meta.url);
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -28,64 +26,78 @@ async function render() {
   );
 }
 
-test("server-renders the starter loading skeleton", async () => {
+test("server-renders the bilingual ROOT / RITUAL site", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, developmentPreviewMeta);
-  assert.match(html, /<title>Your site is taking shape<\/title>/i);
-  assert.match(html, /Building your site/);
-  assert.match(html, /Your site is taking shape/);
-  assert.match(
-    html,
-    /Your first version will appear here automatically when it’s ready\./,
-  );
-  assert.doesNotMatch(html, /Codex/);
-  assert.match(html, /react-loading-skeleton/);
-  assert.match(html, /role="status"/);
+  assert.match(html, /<html lang="ru">/i);
+  assert.match(html, /<title>OZ SPA/);
+  assert.match(html, /class="language-switch"/);
+  assert.match(html, />RU<\/button>/);
+  assert.match(html, />EN<\/button>/);
+  assert.match(html, /id="services"/);
+  assert.match(html, /id="gallery"/);
+  assert.match(html, /id="journal"/);
+  assert.match(html, /id="booking"/);
+  assert.match(html, /class="booking-form"/);
 });
 
-test("keeps the loading skeleton scoped and disposable", async () => {
-  const [preview, css, page, layout, packageJson, files] = await Promise.all([
-    readFile(new URL("SkeletonPreview.tsx", previewRoot), "utf8"),
-    readFile(new URL("preview.css", previewRoot), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readdir(previewRoot),
+test("keeps core client interactions wired", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("app/page.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/globals.css", projectRoot), "utf8"),
   ]);
 
-  assert.deepEqual(files.sort(), ["SkeletonPreview.tsx", "preview.css"]);
-  assert.match(preview, /from "react-loading-skeleton"/);
-  assert.match(preview, /baseColor="#eceae7"/);
-  assert.match(preview, /highlightColor="#f9f8f6"/);
-  assert.match(preview, /duration=\{2\.8\}/);
-  assert.match(preview, /sites-skeleton-search-placeholder/);
-  assert.match(packageJson, /"react-loading-skeleton": "3\.5\.0"/);
+  assert.match(page, /type Language = "ru" \| "en"/);
+  assert.match(page, /setLanguage\("ru"\)/);
+  assert.match(page, /setLanguage\("en"\)/);
+  assert.match(page, /setMenuOpen/);
+  assert.match(page, /setOpenService/);
+  assert.match(page, /aboutPhotos/);
+  assert.match(page, /setAboutPhotoIndex/);
+  assert.match(page, /Мои дипломы и сертификаты/);
+  assert.match(page, /setCertificateIndex/);
+  assert.match(page, /aria-expanded/);
+  assert.match(page, /event\.preventDefault\(\)/);
+  assert.match(page, /name="date"/);
+  assert.match(page, /name="time"/);
+  assert.match(page, /Выбрать время и дату/);
+  assert.match(css, /@media \(max-width: 650px\)/);
+  assert.match(css, /@import "\.\.\/opendesign\/root-ritual\/tokens\.css"/);
+});
 
-  const shellIndex = preview.indexOf('className="sites-skeleton-shell"');
-  const statusIndex = preview.indexOf('className="sites-skeleton-status"');
-  assert.ok(shellIndex >= 0 && statusIndex > shellIndex);
-  assert.match(css, /position:\s*fixed/);
-  assert.match(css, /inset:\s*0/);
-  assert.match(css, /opacity:\s*0\.52/);
-  assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(css, /#020617|canvas|pets|progress/i);
-  assert.doesNotMatch(
-    preview,
-    /loading-spinner|status-mark|status-progress|canvas|cookie|random/i,
-  );
+test("ships a complete OpenDesign design-system package", async () => {
+  const [manifestText, design, tokens] = await Promise.all([
+    readFile(new URL("manifest.json", designSystemRoot), "utf8"),
+    readFile(new URL("DESIGN.md", designSystemRoot), "utf8"),
+    readFile(new URL("tokens.css", designSystemRoot), "utf8"),
+  ]);
+  const manifest = JSON.parse(manifestText);
 
-  assert.match(page, /export const metadata:\s*Metadata/);
-  assert.match(page, /"codex-preview": "development"/);
-  assert.match(page, /<SkeletonPreview \/>/);
-  assert.match(layout, /title:\s*"Starter Project"/);
-  assert.doesNotMatch(layout, /codex-preview|_sites-preview|themeColor|\bViewport\b/);
-  assert.doesNotMatch(css, /(^|\s)(html|body)\s*\{/m);
+  assert.equal(manifest.schemaVersion, "od-design-system-project/v1");
+  assert.equal(manifest.id, "root-ritual");
+  assert.equal(manifest.files.design, "DESIGN.md");
+  assert.equal(manifest.files.tokens, "tokens.css");
+  assert.ok((design.match(/^## /gm) ?? []).length >= 7);
 
-  await assert.rejects(
-    access(new URL("public/_sites-preview", templateRoot)),
-  );
+  const requiredTokens = [
+    "--bg", "--surface", "--surface-warm", "--fg", "--fg-2", "--muted",
+    "--meta", "--border", "--border-soft", "--accent", "--accent-on",
+    "--accent-hover", "--accent-active", "--success", "--warn", "--danger",
+    "--font-display", "--font-body", "--font-mono", "--text-xs", "--text-sm",
+    "--text-base", "--text-lg", "--text-xl", "--text-2xl", "--text-3xl",
+    "--text-4xl", "--leading-body", "--leading-tight", "--tracking-display",
+    "--space-1", "--space-2", "--space-3", "--space-4", "--space-5",
+    "--space-6", "--space-8", "--space-12", "--section-y-desktop",
+    "--section-y-tablet", "--section-y-phone", "--radius-sm", "--radius-md",
+    "--radius-lg", "--radius-pill", "--elev-flat", "--elev-ring",
+    "--elev-raised", "--focus-ring", "--motion-fast", "--motion-base",
+    "--ease-standard", "--container-max", "--container-gutter-desktop",
+    "--container-gutter-tablet", "--container-gutter-phone",
+  ];
+  for (const token of requiredTokens) {
+    assert.match(tokens, new RegExp(`${token.replaceAll("-", "\\-")}\\s*:`));
+  }
 });

@@ -13,18 +13,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ROOT / RITUAL — trichology · восстановление волос",
+  title: "OZ SPA — trichology · восстановление волос",
   description: "Scalp care and hair restoration. Бережная работа с кожей головы и длиной волос.",
   openGraph: {
     type: "website",
     locale: "ru_RU",
-    siteName: "ROOT / RITUAL",
-    title: "ROOT / RITUAL — trichology · восстановление волос",
+    siteName: "OZ SPA",
+    title: "OZ SPA — trichology · восстановление волос",
     description: "Scalp care and hair restoration. Бережная работа с кожей головы и длиной волос.",
   },
   twitter: {
     card: "summary",
-    title: "ROOT / RITUAL — trichology · восстановление волос",
+    title: "OZ SPA — trichology · восстановление волос",
     description: "Scalp care and hair restoration.",
   },
   icons: {
