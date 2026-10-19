@@ -1442,7 +1442,7 @@ export default function Home() {
         <p className="instagram-copy">{t.instagram.text}</p>
         <a
           className="button button-outline"
-          href="https://www.instagram.com/"
+          href="https://www.instagram.com/olga_zhgirova"
           target="_blank"
           rel="noreferrer"
         >
@@ -1637,7 +1637,7 @@ export default function Home() {
         <p>{t.footer.label}</p>
         <a
           className="footer-instagram"
-          href="https://www.instagram.com/"
+          href="https://www.instagram.com/olga_zhgirova"
           target="_blank"
           rel="noreferrer"
         >
