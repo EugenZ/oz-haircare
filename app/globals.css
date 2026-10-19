@@ -47,6 +47,8 @@ img { display: block; max-width: 100%; }
 .eyebrow { color: var(--clay); font-size: 11px; font-weight: 700; letter-spacing: .16em; line-height: 1.5; margin: 0 0 28px; text-transform: uppercase; }
 .eyebrow-dot { background: var(--clay); border-radius: 50%; display: inline-block; height: 7px; margin-right: 9px; vertical-align: 0.15em; width: 7px; }
 .eyebrow-text .eyebrow-dot { margin-left: 9px; margin-right: 9px; }
+.eyebrow-line { display: block; }
+.eyebrow-line .eyebrow-dot { margin-left: 0; }
 h1, h2, h3, p { margin-top: 0; }
 h1, h2 { font-family: var(--display); font-weight: 400; letter-spacing: -.045em; }
 h1 { font-size: clamp(58px, 7vw, 108px); line-height: .93; margin-bottom: 30px; max-width: 760px; }
@@ -253,8 +255,15 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .section-pad { padding-bottom: 72px; padding-top: 72px; }
   .site-header { padding-bottom: 18px; padding-top: 18px; position: absolute; }
   .brand-logo { height: 64px; }
-  .menu-toggle { display: flex; }
-  .language-switch { margin-left: 0; position: absolute; right: 78px; top: 32px; }
+  .menu-toggle { align-items: center; display: flex; gap: 0; height: 24px; justify-content: center; order: 3; }
+  .menu-toggle span:not(.menu-lines) { display: none; }
+  .menu-lines { width: 24px; }
+  .menu-lines i { transition: transform .25s ease, opacity .25s ease; }
+  .menu-toggle[aria-expanded="true"] .menu-lines i:first-child { transform: translateY(5px) rotate(45deg); }
+  .menu-toggle[aria-expanded="true"] .menu-lines i:nth-child(2) { opacity: 0; }
+  .menu-toggle[aria-expanded="true"] .menu-lines i:last-child { transform: translateY(-5px) rotate(-45deg); }
+  .brand { order: 1; }
+  .language-switch { margin-left: auto; margin-right: 16px; order: 2; position: static; }
   .main-nav { align-items: flex-start; background: var(--cream); box-shadow: 0 20px 30px rgba(38,52,45,.08); display: none; flex-direction: column; gap: 23px; left: 0; padding: 28px 7vw 34px; position: absolute; right: 0; top: 96px; }
   .main-nav.is-open { display: flex; }
   .main-nav > a:not(.nav-cta) { font-size: 17px; }
@@ -286,7 +295,9 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .services-list { margin-top: 44px; }
   .service-card { gap: 14px; grid-template-columns: 72px 1fr; padding: 20px 0; }
   .service-topline { font-size: 16px; padding-top: 4px; }
-  .service-title-row { gap: 14px; }
+  .service-title-row { align-items: flex-start; gap: 12px; }
+  .service-title-row .service-toggle { align-self: flex-start; position: relative; top: 0; }
+  .service-toggle { height: 38px; width: 38px; }
   .service-card h3 { font-size: clamp(24px, 7.2vw, 30px); line-height: 1.08; }
   .service-panel, .service-details, .service-suitable, .service-note { max-width: none; }
   .service-details li { font-size: 13px; }
@@ -296,11 +307,9 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .services-footnote { align-items: flex-start; flex-direction: column; gap: 10px; }
   .instagram-strip { align-items: flex-start; display: flex; flex-direction: column; gap: 25px; }
   .instagram-copy { max-width: 360px; }
-  .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 270px 170px 170px; margin-top: 42px; }
-  .gallery-item-1 { grid-row: 1 / span 2; }
-  .gallery-item-2 { grid-column: 2; }
-  .gallery-item-3 { grid-column: 1; grid-row: 3; }
-  .gallery-item-4 { grid-column: 2; grid-row: 3; }
+  .gallery-grid { display: grid; gap: 12px; grid-template-columns: 1fr; grid-template-rows: auto; margin-top: 42px; }
+  .gallery-item { aspect-ratio: 3 / 2; }
+  .gallery-item-1, .gallery-item-2, .gallery-item-3, .gallery-item-4 { grid-column: auto; grid-row: auto; }
   .articles-grid { grid-template-columns: 1fr; margin-top: 42px; }
   .article-card { min-height: 260px; }
   .booking { display: block; }
@@ -311,3 +320,10 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .form-success { padding: 30px 24px; }
   .site-footer { align-items: start; display: flex; flex-direction: column; gap: 18px; }
 }
+
+/* "Дополнительные услуги" — full-width expandable section header.
+   Removes the empty left column so the row stops looking like an orphan
+   and aligns its title with the service numbers below it. */
+.service-card.service-more { grid-template-columns: 1fr; }
+.service-card.service-more > .service-topline { display: none; }
+.service-card.service-more .service-title-row { align-items: center; gap: 16px; }

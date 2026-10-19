@@ -142,7 +142,7 @@ const copy = {
       title: "Начнём с",
       titleEm: "разговора.",
       text: "Выберите дату и время, оставьте контакты — я подтвержу запись и задам несколько вопросов перед встречей.",
-      location: "Москва · очно",
+      location: "Лос Анджелес · очно",
       schedule: "Пн–Сб · 10:00–20:00",
       date: "Дата",
       time: "Время",
@@ -286,7 +286,7 @@ const copy = {
       title: "Let’s start with a",
       titleEm: "conversation.",
       text: "Choose a date and time, leave your details — I will confirm the visit and ask a few questions beforehand.",
-      location: "Moscow · in person",
+      location: "Los Angeles · in person",
       schedule: "Mon–Sat · 10:00–20:00",
       date: "Date",
       time: "Time",
@@ -1131,9 +1131,11 @@ export default function Home() {
       <section className="hero section-pad" id="top">
         <div className="hero-copy">
           <p className="eyebrow">
-            <span className="eyebrow-dot" aria-hidden="true" />
-            <span className="eyebrow-text">
+            <span className="eyebrow-line">
+              <span className="eyebrow-dot" aria-hidden="true" />
               {t.hero.eyebrowRole}
+            </span>
+            <span className="eyebrow-line">
               <span className="eyebrow-dot" aria-hidden="true" />
               {t.hero.eyebrow}
             </span>

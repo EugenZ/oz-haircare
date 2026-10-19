@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { PwaRegister } from "./pwa-register";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -11,6 +12,13 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+// Next 16 keeps themeColor in the viewport export (not in metadata).
+export const viewport: Viewport = {
+  themeColor: "#c66d4e",
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "OZ SPA — trichology · восстановление волос",
@@ -27,9 +35,14 @@ export const metadata: Metadata = {
     title: "OZ SPA — trichology · восстановление волос",
     description: "Scalp care and hair restoration.",
   },
+  manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
@@ -44,6 +57,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <PwaRegister />
       </body>
     </html>
   );
