@@ -155,8 +155,15 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .service-suitable, .service-note { color: var(--ink-soft); font-size: 14px; line-height: 1.55; margin: 16px 0 0; max-width: 640px; }
 .service-suitable span { color: var(--clay); display: block; font-size: 11px; letter-spacing: .12em; margin-bottom: 6px; text-transform: uppercase; }
 .service-extra-list { border-top: 1px solid var(--line); grid-column: 1 / -1; margin-top: 8px; }
-.service-extra-list .service-card h3 { font-size: clamp(26px, 2.4vw, 34px); }
-.service-extra-list .service-card:last-child { border-bottom: 0; padding-bottom: 8px; }
+.service-subitems { border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; list-style: none; margin: 18px 0 0; padding: 0 0 0 24px; }
+.service-subitem { padding: 16px 0; }
+.service-subitem + .service-subitem { border-top: 1px solid var(--line); }
+.service-subitem-head { align-items: baseline; display: flex; gap: 18px; justify-content: space-between; }
+.service-subitem h4 { font-family: var(--display); font-size: clamp(19px, 1.6vw, 22px); font-weight: 400; letter-spacing: -.02em; margin: 0; }
+.service-subitem-price { color: var(--clay); font-family: var(--display); font-size: 16px; font-style: italic; white-space: nowrap; }
+.service-subitem-includes, .service-subitem-suitable { color: var(--ink-soft); font-size: 13px; line-height: 1.5; margin: 8px 0 0; max-width: 640px; }
+.service-subitem-includes span, .service-subitem-suitable span { color: var(--clay); display: block; font-size: 10px; letter-spacing: .12em; margin-bottom: 3px; text-transform: uppercase; }
+.service-subitem-note { color: var(--ink-soft); font-size: 12px; line-height: 1.5; margin: 8px 0 0; max-width: 640px; }
 .services-footnote { align-items: center; display: flex; font-size: 12px; gap: 21px; justify-content: flex-end; margin-top: 23px; }
 .services-footnote span { color: var(--ink-soft); }
 .services-footnote a { border-bottom: 1px solid var(--ink); padding-bottom: 4px; }
@@ -303,7 +310,9 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .service-details li { font-size: 13px; }
   .service-prices li { align-items: flex-start; flex-direction: column; gap: 2px; }
   .service-prices b { font-size: 20px; min-width: 0; }
-  .service-extra-list .service-card h3 { font-size: clamp(22px, 6.2vw, 26px); }
+  .service-subitems { padding-left: 18px; }
+  .service-subitem-head { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .service-subitem h4 { font-size: clamp(18px, 5vw, 22px); }
   .services-footnote { align-items: flex-start; flex-direction: column; gap: 10px; }
   .instagram-strip { align-items: flex-start; display: flex; flex-direction: column; gap: 25px; }
   .instagram-copy { max-width: 360px; }

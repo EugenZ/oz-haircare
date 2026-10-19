@@ -1,6 +1,13 @@
 "use client";
 
-import { FormEvent, PointerEvent, useEffect, useRef, useState } from "react";
+import {
+  FormEvent,
+  PointerEvent,
+  useEffect,
+  useSyncExternalStore,
+  useRef,
+  useState,
+} from "react";
 
 type Language = "ru" | "en";
 type Localized = { ru: string; en: string };
@@ -976,6 +983,53 @@ function ServiceRow({
   );
 }
 
+function ServiceSubItem({
+  service,
+  language,
+  includesLabel,
+  suitableLabel,
+}: {
+  service: Service;
+  language: Language;
+  includesLabel: string;
+  suitableLabel: string;
+}) {
+  const priceText = service.rates
+    ? service.rates.map((r) => r.amount + " " + r.label[language]).join(" · ")
+    : service.price[language];
+  const includesText = service.includes
+    .map((item) => {
+      const parts = [item.text[language]];
+      if (item.children) {
+        parts.push(item.children.map((child) => child[language]).join(" / "));
+      }
+      return parts.join(" · ");
+    })
+    .join(" · ");
+
+  return (
+    <li className="service-subitem">
+      <div className="service-subitem-head">
+        <h4>{service.title[language]}</h4>
+        <span className="service-subitem-price">{priceText}</span>
+      </div>
+      {includesText && (
+        <p className="service-subitem-includes">
+          <span>{includesLabel}</span>
+          {includesText}
+        </p>
+      )}
+      {service.suitable && (
+        <p className="service-subitem-suitable">
+          <span>{suitableLabel}</span>
+          {service.suitable[language]}
+        </p>
+      )}
+      {service.note && <p className="service-subitem-note">{service.note[language]}</p>}
+    </li>
+  );
+}
+
 function upcomingOpenDays(count = 18, now = new Date()) {
   const days: string[] = [];
   const cursor = startOfDay(now);
@@ -985,6 +1039,20 @@ function upcomingOpenDays(count = 18, now = new Date()) {
     cursor.setDate(cursor.getDate() + 1);
   }
   return days;
+}
+
+// The booking "open days" list depends on the viewer's local time (timezone +
+// today), which differs between the server and the browser. Render an empty list
+// on the server and populate it on the client so hydration never mismatches.
+let openDaysCache: string[] | null = null;
+
+function getOpenDays(): string[] {
+  if (openDaysCache === null) openDaysCache = upcomingOpenDays();
+  return openDaysCache;
+}
+
+function subscribeToOpenDays(): () => void {
+  return () => {};
 }
 
 function formatOpenDay(iso: string, language: Language) {
@@ -1002,7 +1070,7 @@ export default function Home() {
   const [language, setLanguage] = useState<Language>("ru");
   const [menuOpen, setMenuOpen] = useState(false);
   const [openService, setOpenService] = useState<string | null>(null);
-  const [extrasOpen, setExtrasOpen] = useState(false);
+  const [extrasOpen, setExtrasOpen] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [aboutPhotoIndex, setAboutPhotoIndex] = useState(0);
@@ -1057,7 +1125,11 @@ export default function Home() {
     showCertificate(certificateIndex + (delta < 0 ? 1 : -1));
   };
 
-  const openDays = upcomingOpenDays();
+  const openDays = useSyncExternalStore(
+    subscribeToOpenDays,
+    getOpenDays,
+    () => [],
+  );
   const timeSlots = selectedDate ? availableSlots(selectedDate) : TIME_SLOTS;
 
   useEffect(() => {
@@ -1410,22 +1482,17 @@ export default function Home() {
               </div>
             </div>
             <div className="service-extra-list" id="extra-services" hidden={!extrasOpen}>
-              {extraServices.map((service) => (
-                <ServiceRow
-                  key={service.number}
-                  service={service}
-                  language={language}
-                  isOpen={openService === service.number}
-                  onToggle={() =>
-                    setOpenService((current) =>
-                      current === service.number ? null : service.number,
-                    )
-                  }
-                  detailsLabel={t.services.details}
-                  includesLabel={t.services.includes}
-                  suitableLabel={t.services.suitable}
-                />
-              ))}
+              <ul className="service-subitems">
+                {extraServices.map((service) => (
+                  <ServiceSubItem
+                    key={service.number}
+                    service={service}
+                    language={language}
+                    includesLabel={t.services.includes}
+                    suitableLabel={t.services.suitable}
+                  />
+                ))}
+              </ul>
             </div>
           </article>
         </div>
