@@ -42,6 +42,7 @@ test("server-renders the bilingual ROOT / RITUAL site", async () => {
   assert.match(html, /id="journal"/);
   assert.match(html, /id="booking"/);
   assert.match(html, /class="booking-form"/);
+  assert.match(html, /id="service-01"/);
 });
 
 test("keeps core client interactions wired", async () => {
@@ -63,6 +64,9 @@ test("keeps core client interactions wired", async () => {
   assert.match(page, /event\.preventDefault\(\)/);
   assert.match(page, /name="date"/);
   assert.match(page, /name="time"/);
+  assert.match(page, /className="floating-note floating-note-bottom"/);
+  assert.match(page, /href=\{"#service-"/);
+  assert.match(page, /setOpenService\(services\[0\]\.number\)/);
   assert.match(page, /Выбрать время и дату/);
   assert.match(css, /@media \(max-width: 650px\)/);
   assert.match(css, /@import "\.\.\/opendesign\/root-ritual\/tokens\.css"/);

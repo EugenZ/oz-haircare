@@ -885,6 +885,7 @@ function isDateOpen(iso: string, now = new Date()) {
 }
 
 function ServiceRow({
+  id,
   service,
   language,
   isOpen,
@@ -900,11 +901,12 @@ function ServiceRow({
   detailsLabel: string;
   includesLabel: string;
   suitableLabel: string;
+  id?: string;
 }) {
   const detailsId = "service-details-" + service.number;
 
   return (
-    <article className={isOpen ? "service-card is-open" : "service-card"}>
+    <article id={id} className={isOpen ? "service-card is-open" : "service-card"}>
       <div className="service-topline">
         <span>{service.number}</span>
         <span>{service.price[language]}</span>
@@ -1178,13 +1180,18 @@ export default function Home() {
               <small>{t.hero.noteTopSmall}</small>
             </span>
           </div>
-          <div className="floating-note floating-note-bottom">
+          <a
+            className="floating-note floating-note-bottom"
+            href={"#service-" + services[0].number}
+            onClick={() => setOpenService(services[0].number)}
+            aria-label={services[0].title[language]}
+          >
             <span className="note-number">01</span>
             <span>
               <small>{t.hero.noteBottomSmall}</small>
               <b>{t.hero.noteBottom}</b>
             </span>
-          </div>
+          </a>
         </div>
       </section>
 
@@ -1367,6 +1374,7 @@ export default function Home() {
               key={service.number}
               service={service}
               language={language}
+              id={"service-" + service.number}
               isOpen={openService === service.number}
               onToggle={() =>
                 setOpenService((current) =>
