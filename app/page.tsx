@@ -112,6 +112,8 @@ const copy = {
       includes: "Включает",
       suitable: "Подходит, если у вас",
       more: "Дополнительные услуги",
+      moreNumber: "05",
+      morePrice: { ru: "$60–$280", en: "$60–$280" },
       notSure: "Не знаете, что выбрать?",
       message: "Напишите — помогу сориентироваться",
     },
@@ -253,6 +255,8 @@ const copy = {
       includes: "Includes",
       suitable: "A good fit if you have",
       more: "Additional services",
+      moreNumber: "05",
+      morePrice: { ru: "$60–$280", en: "$60–$280" },
       notSure: "Not sure where to start?",
       message: "Write to me — I will help you choose",
     },
@@ -1542,7 +1546,10 @@ export default function Home() {
               extrasOpen ? "service-card service-more is-open" : "service-card service-more"
             }
           >
-            <div className="service-topline" />
+            <div className="service-topline">
+              <span>{t.services.moreNumber}</span>
+              <span>{t.services.morePrice[language]}</span>
+            </div>
             <div className="service-body">
               <div className="service-title-row">
                 <h3>{t.services.more}</h3>
