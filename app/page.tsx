@@ -75,19 +75,12 @@ const copy = {
     ticker: ["Кожа головы", "Реконструкция", "Мягкий уход", "Живые волосы"],
     about: {
       label: "Обо мне",
-      title: "Здоровые волосы начинаются",
-      titleEm: "с понимания.",
       caption: "бережная работа|с каждой прядью",
-      prevPhoto: "Предыдущее фото",
-      nextPhoto: "Следующее фото",
-      photo: "Фото",
-      certificatesTitle: "Мои дипломы и сертификаты",
-      prevCertificate: "Предыдущий документ",
-      nextCertificate: "Следующий документ",
-      certificate: "Документ",
-      large:
+      prevSlide: "Предыдущий слайд",
+      nextSlide: "Следующий слайд",
+      slideLabel: "Слайд",
+      slides: [
         "Я Ольга, сертифицированный трихолог и специалист по восстановлению волос",
-      paragraphs: [
         "Я верю, что красивые и здоровые на вид волосы начинаются не с одной процедуры, а с понимания их состояния и правильного ухода.",
         "В своей работе я придерживаюсь спокойного, индивидуального подхода — без громких обещаний, универсальных решений и ожиданий мгновенного результата. У каждого человека своя история волос: окрашивания, термические воздействия, домашний уход, изменения в организме и другие факторы, которые могут влиять на их состояние.",
         "Поэтому прежде чем выбирать процедуру, я внимательно выслушиваю ваши пожелания, изучаю состояние кожи головы и волос, задаю вопросы и помогаю определить, какой уход будет наиболее уместен именно в вашем случае.",
@@ -98,6 +91,10 @@ const copy = {
         "Без спешки. Без лишних обещаний. С вниманием к вашим волосам и результату, который мы выстраиваем последовательно.",
       ],
       signature: "ЖГИРОВА ОЛЬГА — ваш специалист по волосам",
+      certificatesTitle: "Мои дипломы и сертификаты",
+      prevCertificate: "Предыдущий документ",
+      nextCertificate: "Следующий документ",
+      certificate: "Документ",
       processLabel: "Как всё проходит",
       process: [
         ["Слушаем", "что изменилось и чего хочется"],
@@ -219,21 +216,14 @@ const copy = {
     ticker: ["Scalp care", "Reconstruction", "Gentle rituals", "Living hair"],
     about: {
       label: "About",
-      title: "Healthy hair begins",
-      titleEm: "with understanding.",
       caption: "gentle work|with every strand",
-      prevPhoto: "Previous photo",
-      nextPhoto: "Next photo",
-      photo: "Photo",
-      certificatesTitle: "My diplomas and certificates",
-      prevCertificate: "Previous document",
-      nextCertificate: "Next document",
-      certificate: "Document",
-      large:
-        "I’m Olga, a certified trichologist and hair restoration specialist",
-      paragraphs: [
+      prevSlide: "Previous slide",
+      nextSlide: "Next slide",
+      slideLabel: "Slide",
+      slides: [
+        "I'm Olga, a certified trichologist and hair restoration specialist",
         "I believe hair that looks beautiful and healthy begins not with a single treatment, but with understanding its condition and the right care.",
-        "I work in a calm, individual way — without loud promises, one-size-fits-all solutions, or the expectation of an instant result. Everyone’s hair has its own history: colour, heat, home care, changes in the body, and other factors that can affect how it feels.",
+        "I work in a calm, individual way — without loud promises, one-size-fits-all solutions, or the expectation of an instant result. Everyone's hair has its own history: colour, heat, home care, changes in the body, and other factors that can affect how it feels.",
         "So before choosing a treatment, I listen carefully to what you want, look at the scalp and the hair, ask questions, and help decide which care fits your case.",
         "My task is not only to improve how the hair looks, but to help you understand what it needs.",
         "A visit is more than care in the chair. You leave with home-care recommendations, a clearer sense of which habits to reconsider, what to avoid, and how to notice change over time. When it is useful, we talk through a further plan for treatments and support at home.",
@@ -242,6 +232,10 @@ const copy = {
         "Without rush. Without extra promises. With attention to your hair, and to a result we build step by step.",
       ],
       signature: "OLGA ZHGIROVA — your hair specialist",
+      certificatesTitle: "My diplomas and certificates",
+      prevCertificate: "Previous document",
+      nextCertificate: "Next document",
+      certificate: "Document",
       processLabel: "The process",
       process: [
         ["Listen", "what changed and what you want"],
@@ -833,12 +827,76 @@ const galleryImages = [
 // Add another portrait by placing a file in public/ and appending it here.
 const aboutPhotos: AboutPhoto[] = [
   {
-    src: "/about-olga.png",
+    src: "/about-01.png",
     alt: {
-      ru: "Ольга проводит процедуру для волос",
-      en: "Olga performing a hair treatment",
+      ru: "Ольга в кабинете с прибором для анализа волос",
+      en: "Olga in the treatment room with a hair-analysis device",
     },
-    position: "42% 12%",
+    position: "50% 22%",
+  },
+  {
+    src: "/about-02.png",
+    alt: {
+      ru: "Ольга проводит процедуру ухода за волосами",
+      en: "Olga performing a hair care treatment",
+    },
+    position: "35% 18%",
+  },
+  {
+    src: "/about-03.jpg",
+    alt: {
+      ru: "Длинные волосы в мягком свете",
+      en: "Long wavy hair in soft light",
+    },
+    position: "center 30%",
+  },
+  {
+    src: "/about-04.jpg",
+    alt: {
+      ru: "Процедура ухода за кожей головы",
+      en: "Scalp care treatment",
+    },
+    position: "center 40%",
+  },
+  {
+    src: "/about-05.jpg",
+    alt: {
+      ru: "Прикосновение к волосам",
+      en: "A hand touching hair",
+    },
+    position: "center 40%",
+  },
+  {
+    src: "/about-06.jpg",
+    alt: {
+      ru: "Длинные волосы на солнце",
+      en: "Long hair in warm sunlight",
+    },
+    position: "center 30%",
+  },
+  {
+    src: "/about-07.jpg",
+    alt: {
+      ru: "Блондинка приподнимает волосы",
+      en: "A woman lifting her hair",
+    },
+    position: "center 35%",
+  },
+  {
+    src: "/about-08.jpg",
+    alt: {
+      ru: "Длинные волосы в мягком свете",
+      en: "Long wavy hair in soft light",
+    },
+    position: "center 35%",
+  },
+  {
+    src: "/about-09.jpg",
+    alt: {
+      ru: "Длинные волосы на солнце",
+      en: "Long hair in warm sunlight",
+    },
+    position: "center 35%",
   },
 ];
 
@@ -1078,7 +1136,6 @@ export default function Home() {
   const aboutSwipeStart = useRef<number | null>(null);
   const certificateSwipeStart = useRef<number | null>(null);
   const t = copy[language];
-  const aboutPhoto = aboutPhotos[aboutPhotoIndex] ?? aboutPhotos[0];
   const hasAboutPhotos = aboutPhotos.length > 1;
 
   const showAboutPhoto = (index: number) => {
@@ -1281,83 +1338,105 @@ export default function Home() {
       <section className="about section-pad" id="about">
         <div className="section-intro">
           <p className="eyebrow">{t.about.label}</p>
-          <h2>
-            {t.about.title} <em>{t.about.titleEm}</em>
-          </h2>
         </div>
-        <div className="about-grid">
-          <div className="about-image-wrap">
-            <div
-              className="about-slider"
-              role="region"
-              aria-roledescription="carousel"
-              aria-label={t.about.label}
-              onPointerDown={handleAboutPointerDown}
-              onPointerUp={handleAboutPointerUp}
-              onPointerCancel={() => {
-                aboutSwipeStart.current = null;
-              }}
-            >
-              <img
-                key={aboutPhoto.src}
-                src={aboutPhoto.src}
-                alt={aboutPhoto.alt[language]}
-                className="about-image"
-                style={{ objectPosition: aboutPhoto.position ?? "center" }}
-                loading="lazy"
-                draggable={false}
-              />
-              {hasAboutPhotos ? (
-                <>
-                  <button
-                    type="button"
-                    className="about-slider-btn about-slider-prev"
-                    aria-label={t.about.prevPhoto}
-                    onClick={() => showAboutPhoto(aboutPhotoIndex - 1)}
+
+        <div
+          className="about-carousel"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label={t.about.label}
+          onPointerDown={handleAboutPointerDown}
+          onPointerUp={handleAboutPointerUp}
+          onPointerCancel={() => {
+            aboutSwipeStart.current = null;
+          }}
+        >
+          <div className="about-grid">
+            <div className="about-image-wrap">
+              <div className="about-photos">
+                {aboutPhotos.map((photo, index) => (
+                  <div
+                    key={photo.src}
+                    className={
+                      index === aboutPhotoIndex
+                        ? "about-photo is-active"
+                        : "about-photo"
+                    }
+                    aria-hidden={index !== aboutPhotoIndex}
                   >
-                    <span aria-hidden="true">‹</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="about-slider-btn about-slider-next"
-                    aria-label={t.about.nextPhoto}
-                    onClick={() => showAboutPhoto(aboutPhotoIndex + 1)}
-                  >
-                    <span aria-hidden="true">›</span>
-                  </button>
-                  <div className="about-slider-dots">
-                    {aboutPhotos.map((photo, index) => (
-                      <button
-                        key={photo.src}
-                        type="button"
-                        className={index === aboutPhotoIndex ? "is-active" : ""}
-                        aria-label={`${t.about.photo} ${index + 1}`}
-                        aria-current={index === aboutPhotoIndex ? "true" : undefined}
-                        onClick={() => showAboutPhoto(index)}
-                      />
-                    ))}
+                    <img
+                      src={photo.src}
+                      alt={index === aboutPhotoIndex ? photo.alt[language] : ""}
+                      className="about-image"
+                      style={{ objectPosition: photo.position ?? "center" }}
+                      loading={index < 2 ? "eager" : "lazy"}
+                      draggable={false}
+                    />
                   </div>
-                </>
-              ) : null}
+                ))}
+              </div>
+              <span className="image-caption">
+                {t.about.caption.split("|").map((line) => (
+                  <span key={line}>
+                    {line}
+                    <br />
+                  </span>
+                ))}
+              </span>
             </div>
-            <span className="image-caption">
-              {t.about.caption.split("|").map((line) => (
-                <span key={line}>
-                  {line}
-                  <br />
+            <div className="about-copy">
+              <p className="about-counter" aria-hidden="true">
+                <span className="about-counter-current">
+                  {String(aboutPhotoIndex + 1).padStart(2, "0")}
                 </span>
-              ))}
-            </span>
-          </div>
-          <div className="about-copy">
-            <p className="large-copy">{t.about.large}</p>
-            {t.about.paragraphs.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-            <div className="signature">
-              <span className="signature-line" />
-              <span>{t.about.signature}</span>
+                <span className="about-counter-sep" aria-hidden="true">
+                  /
+                </span>
+                <span className="about-counter-total">
+                  {String(aboutPhotos.length).padStart(2, "0")}
+                </span>
+              </p>
+              <p key={aboutPhotoIndex} className="about-slide-text">
+                {t.about.slides[aboutPhotoIndex]}
+              </p>
+              <div className="signature">
+                <span className="signature-line" />
+                <span>{t.about.signature}</span>
+              </div>
             </div>
+          </div>
+
+          <div className="about-controls">
+            <button
+              type="button"
+              className="about-arrow"
+              aria-label={t.about.prevSlide}
+              onClick={() => showAboutPhoto(aboutPhotoIndex - 1)}
+            >
+              <span aria-hidden="true">‹</span>
+            </button>
+            <div className="about-slider-dots" aria-label={t.about.slideLabel}>
+              {aboutPhotos.map((photo, index) => (
+                <button
+                  key={photo.src}
+                  type="button"
+                  className={index === aboutPhotoIndex ? "is-active" : ""}
+                  aria-label={`${t.about.slideLabel} ${index + 1}`}
+                  aria-current={
+                    index === aboutPhotoIndex ? "true" : undefined
+                  }
+                  onClick={() => showAboutPhoto(index)}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              className="about-arrow"
+              aria-label={t.about.nextSlide}
+              onClick={() => showAboutPhoto(aboutPhotoIndex + 1)}
+            >
+              <span aria-hidden="true">›</span>
+            </button>
           </div>
         </div>
         <div className="certificates">

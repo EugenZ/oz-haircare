@@ -338,3 +338,27 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .service-card.service-more { grid-template-columns: minmax(0, 1fr); }
 .service-card.service-more > .service-topline { display: none; }
 .service-card.service-more .service-title-row { align-items: center; gap: 16px; }
+
+/* ── About carousel (Activities-Widget style: crossfade + counter + dots) ── */
+.about-carousel { margin-top: 56px; }
+.about-photos { position: relative; height: 580px; z-index: 1; }
+.about-photo { position: absolute; inset: 0; opacity: 0; transform: rotate(1.5deg) scale(.985); transition: opacity var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard); }
+.about-photo.is-active { opacity: 1; transform: rotate(0) scale(1); z-index: 2; }
+.about-photo .about-image { height: 100%; width: 100%; animation: none; }
+.about-copy .about-counter { display: flex; align-items: baseline; gap: 8px; margin: 0 0 28px; font-family: var(--display); }
+.about-counter-current { font-size: 46px; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
+.about-counter-sep { color: var(--clay); font-size: 14px; }
+.about-counter-total { color: var(--ink-soft); font-size: 14px; }
+.about-copy .about-slide-text { animation: about-slide-in var(--motion-base) var(--ease-standard); color: var(--ink); font-family: var(--display); font-size: clamp(17px, 1.35vw, 20px); letter-spacing: -.01em; line-height: 1.6; margin: 0 0 30px; }
+@keyframes about-slide-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.about-controls { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 44px; }
+.about-controls .about-slider-dots { position: static; left: auto; right: auto; bottom: auto; justify-content: center; }
+.about-controls .about-slider-dots button { height: 26px; width: 26px; }
+.about-controls .about-slider-dots button:before { background: var(--line); border-radius: 50%; box-shadow: none; height: 8px; left: 9px; top: 9px; width: 8px; }
+.about-controls .about-slider-dots button.is-active:before { background: var(--clay); }
+.about-arrow { align-items: center; background: var(--cream); color: var(--ink); display: flex; font-family: var(--display); font-size: 26px; height: 48px; justify-content: center; line-height: 1; transition: background .2s ease, color .2s ease; width: 48px; }
+.about-arrow:hover { background: var(--clay); color: var(--cream); }
+.about-arrow:focus-visible { outline: 2px solid var(--clay); outline-offset: 3px; }
+@media (max-width: 900px) { .about-photos { height: 480px; } .about-counter-current { font-size: 38px; } }
+@media (max-width: 650px) { .about-carousel { margin-top: 44px; } .about-photos { height: 420px; } .about-controls { gap: 12px; } .about-arrow { height: 44px; width: 44px; font-size: 22px; } .about-copy .about-slide-text { font-size: 17px; } }
+@media (prefers-reduced-motion: reduce) { .about-photo { transition: none; } .about-copy .about-slide-text { animation: none; } }
