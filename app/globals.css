@@ -89,11 +89,10 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 
 .section-intro h2 { font-size: clamp(42px, 5vw, 72px); line-height: .97; margin-bottom: 0; max-width: 750px; }
 .about { background: var(--paper); }
-.about-grid { align-items: start; display: grid; gap: 10vw; grid-template-columns: 1fr 1fr; margin-top: 74px; }
-.about-image-wrap { max-width: 530px; padding: 0 34px 34px 0; position: relative; }
-.about-image-wrap:after { background: var(--sage); content: ""; height: 82%; position: absolute; right: 0; top: 18%; width: 75%; z-index: 0; }
+.about-grid { display: grid; gap: 4vw 6vw; grid-template-columns: minmax(0, 44%) 1fr; align-items: start; margin-top: 74px; }
+.about-stack { display: flex; flex-direction: column; gap: 34px; }
 .about-slider { position: relative; touch-action: pan-y; user-select: none; z-index: 1; }
-.about-image { animation: about-photo-in var(--motion-base) var(--ease-standard); filter: saturate(.8); height: 580px; object-fit: cover; width: 100%; }
+.about-image { background: var(--cream); display: block; height: 100%; object-fit: cover; width: 100%; }
 .about-slider-btn { align-items: center; background: var(--cream); color: var(--ink); display: flex; font-family: var(--display); font-size: 28px; height: 40px; justify-content: center; line-height: 1; position: absolute; top: 50%; transform: translateY(-50%); width: 40px; z-index: 2; }
 .about-slider-btn:hover { background: var(--clay); color: var(--cream); }
 .about-slider-btn:focus-visible, .about-slider-dots button:focus-visible { outline: 2px solid var(--clay); outline-offset: 3px; }
@@ -103,9 +102,7 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .about-slider-dots button { background: transparent; height: 28px; padding: 0; position: relative; width: 28px; }
 .about-slider-dots button:before { background: rgba(245, 241, 233, .72); box-shadow: 0 0 0 1px rgba(38, 52, 45, .4); content: ""; height: 8px; left: 10px; position: absolute; top: 10px; width: 8px; }
 .about-slider-dots button.is-active:before { background: var(--cream); }
-@keyframes about-photo-in { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .about-image { animation: none; } }
-.image-caption { bottom: 3px; color: var(--ink-soft); font-family: var(--display); font-size: 14px; font-style: italic; line-height: 1.2; position: absolute; right: 20px; text-align: right; z-index: 2; }
+.image-caption { color: var(--ink-soft); font-family: var(--display); font-size: 14px; font-style: italic; line-height: 1.3; letter-spacing: .01em; }
 .certificates { border-top: 1px solid var(--line); margin-top: 72px; padding-top: 36px; }
 .certificates h3 { font-family: var(--display); font-size: clamp(22px, 2vw, 28px); font-weight: 400; letter-spacing: -.03em; line-height: 1.15; margin: 0 0 22px; }
 .certificate-slider { background: var(--cream); max-width: 760px; }
@@ -113,7 +110,7 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .certificate-slider .about-slider-btn { box-shadow: var(--elev-ring); }
 .certificate-slider .about-slider-dots button:before { background: rgba(38, 52, 45, .28); box-shadow: none; }
 .certificate-slider .about-slider-dots button.is-active:before { background: var(--ink); }
-.about-copy { max-width: 500px; }
+.about-copy { max-width: 540px; }
 .about-copy p { color: var(--ink-soft); font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
 .about-copy .large-copy { color: var(--ink); font-family: var(--display); font-size: 26px; letter-spacing: -.025em; line-height: 1.24; margin-bottom: 22px; }
 .signature { align-items: center; display: flex; gap: 12px; margin-top: 37px; }
@@ -332,33 +329,51 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .site-footer { align-items: start; display: flex; flex-direction: column; gap: 18px; }
 }
 
-/* "Дополнительные услуги" — full-width expandable section header.
-   Removes the empty left column so the row stops looking like an orphan
-   and aligns its title with the service numbers below it. */
-.service-card.service-more { grid-template-columns: minmax(0, 1fr); }
-.service-card.service-more > .service-topline { display: none; }
-.service-card.service-more .service-title-row { align-items: center; gap: 16px; }
+/* "Дополнительные услуги" — rendered like the other service cards:
+   number + price in the left column, title + toggle on the right, with the
+   extra-services list spanning full width below. */
 
-/* ── About carousel (Activities-Widget style: crossfade + counter + dots) ── */
-.about-carousel { margin-top: 56px; }
-.about-photos { position: relative; height: 580px; z-index: 1; }
-.about-photo { position: absolute; inset: 0; opacity: 0; transform: rotate(1.5deg) scale(.985); transition: opacity var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard); }
-.about-photo.is-active { opacity: 1; transform: rotate(0) scale(1); z-index: 2; }
-.about-photo .about-image { height: 100%; width: 100%; animation: none; }
-.about-copy .about-counter { display: flex; align-items: baseline; gap: 8px; margin: 0 0 28px; font-family: var(--display); }
-.about-counter-current { font-size: 46px; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
-.about-counter-sep { color: var(--clay); font-size: 14px; }
-.about-counter-total { color: var(--ink-soft); font-size: 14px; }
-.about-copy .about-slide-text { animation: about-slide-in var(--motion-base) var(--ease-standard); color: var(--ink); font-family: var(--display); font-size: clamp(17px, 1.35vw, 20px); letter-spacing: -.01em; line-height: 1.6; margin: 0 0 30px; }
+/* ── About carousel — "Activities Widget" layout: a fanned stack of
+   square photo cards on the left, with the counter (top), text (middle) and
+   circular prev/next arrows (bottom-right) on the right ── */
+.about-carousel { margin-top: 8px; }
+
+/* Left column: a square frame holding the rotated photo stack. */
+.about-photos { position: relative; width: 100%; max-width: 460px; aspect-ratio: 1; }
+.about-photo { position: absolute; inset: 0; transform: rotate(var(--rot, 0deg)) scale(var(--sc, .94)); transition: opacity var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard); }
+.about-photo .about-image { border: 1px solid var(--line); box-shadow: var(--elev-raised); height: 100%; width: 100%; }
+.about-photo.is-active { transform: rotate(0deg) scale(1); z-index: 20; }
+.about-photo.is-active .about-image { border-color: var(--clay); }
+
+/* Right column: counter (top) · text (middle) · navigation (bottom). */
+.about-panel { display: flex; flex-direction: column; justify-content: space-between; gap: 28px; min-height: 460px; }
+.about-counter { display: flex; align-items: baseline; gap: 10px; margin: 0; font-family: var(--display); }
+.about-counter-current { font-size: 52px; letter-spacing: -.04em; line-height: 1; color: var(--ink); }
+.about-counter-sep { color: var(--clay); font-size: 15px; }
+.about-counter-total { color: var(--ink-soft); font-size: 15px; }
+.about-copy .about-slide-text { animation: about-slide-in var(--motion-base) var(--ease-standard); color: var(--ink); font-family: var(--display); font-size: clamp(17px, 1.35vw, 21px); letter-spacing: -.01em; line-height: 1.6; margin: 0 0 26px; }
 @keyframes about-slide-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.about-controls { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 44px; }
-.about-controls .about-slider-dots { position: static; left: auto; right: auto; bottom: auto; justify-content: center; }
-.about-controls .about-slider-dots button { height: 26px; width: 26px; }
-.about-controls .about-slider-dots button:before { background: var(--line); border-radius: 50%; box-shadow: none; height: 8px; left: 9px; top: 9px; width: 8px; }
-.about-controls .about-slider-dots button.is-active:before { background: var(--clay); }
-.about-arrow { align-items: center; background: var(--cream); color: var(--ink); display: flex; font-family: var(--display); font-size: 26px; height: 48px; justify-content: center; line-height: 1; transition: background .2s ease, color .2s ease; width: 48px; }
-.about-arrow:hover { background: var(--clay); color: var(--cream); }
-.about-arrow:focus-visible { outline: 2px solid var(--clay); outline-offset: 3px; }
-@media (max-width: 900px) { .about-photos { height: 480px; } .about-counter-current { font-size: 38px; } }
-@media (max-width: 650px) { .about-carousel { margin-top: 44px; } .about-photos { height: 420px; } .about-controls { gap: 12px; } .about-arrow { height: 44px; width: 44px; font-size: 22px; } .about-copy .about-slide-text { font-size: 17px; } }
-@media (prefers-reduced-motion: reduce) { .about-photo { transition: none; } .about-copy .about-slide-text { animation: none; } }
+
+/* Navigation: two circular buttons pinned to the bottom of the right column. */
+.about-nav { display: flex; gap: 14px; justify-content: flex-end; }
+.about-nav-btn { align-items: center; background: transparent; border: 1px solid var(--line); color: var(--ink); display: flex; font-family: var(--display); font-size: 22px; height: 52px; justify-content: center; line-height: 1; transition: background .2s ease, border-color .2s ease, color .2s ease; width: 52px; }
+.about-nav-btn:hover { background: var(--clay); border-color: var(--clay); color: var(--cream); }
+.about-nav-btn:focus-visible { outline: 2px solid var(--clay); outline-offset: 3px; }
+
+@media (max-width: 900px) {
+  .about-grid { grid-template-columns: 1fr; gap: 40px; }
+  .about-photos { max-width: 520px; }
+  .about-panel { min-height: 0; }
+  .about-counter-current { font-size: 44px; }
+  .about-nav { justify-content: flex-start; }
+}
+@media (max-width: 650px) {
+  .about-photos { max-width: 420px; }
+  .about-panel { gap: 22px; }
+  .about-counter-current { font-size: 40px; }
+  .about-copy .about-slide-text { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .about-photo { transition: none; }
+  .about-copy .about-slide-text { animation: none; }
+}

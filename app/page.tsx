@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CSSProperties,
   FormEvent,
   PointerEvent,
   useEffect,
@@ -904,6 +905,10 @@ const aboutPhotos: AboutPhoto[] = [
   },
 ];
 
+// Slight per-slide rotation so the inactive photos read as a fanned stack;
+// the active card straightens to 0deg (mirrors the reference layout).
+const aboutRotations = [5, -3, 7, -6, 4, -8, 6, -4, 2];
+
 // Add a diploma or certificate by placing a file in public/ and appending it here.
 const certificates: AboutPhoto[] = [];
 
@@ -1356,28 +1361,56 @@ export default function Home() {
           }}
         >
           <div className="about-grid">
-            <div className="about-image-wrap">
+            <div className="about-stack">
               <div className="about-photos">
-                {aboutPhotos.map((photo, index) => (
-                  <div
-                    key={photo.src}
-                    className={
-                      index === aboutPhotoIndex
-                        ? "about-photo is-active"
-                        : "about-photo"
-                    }
-                    aria-hidden={index !== aboutPhotoIndex}
-                  >
-                    <img
-                      src={photo.src}
-                      alt={index === aboutPhotoIndex ? photo.alt[language] : ""}
-                      className="about-image"
-                      style={{ objectPosition: photo.position ?? "center" }}
-                      loading={index < 2 ? "eager" : "lazy"}
-                      draggable={false}
-                    />
-                  </div>
-                ))}
+                {aboutPhotos.map((photo, index) => {
+                  const dist = Math.min(
+                    Math.abs(index - aboutPhotoIndex),
+                    aboutPhotos.length -
+                      Math.abs(index - aboutPhotoIndex)
+                  );
+                  const isActive = index === aboutPhotoIndex;
+                  // Deeper cards fade + shrink so the inactive photos read as a
+                  // layered, fanned stack behind the active card (reference look).
+                  const opacity = isActive
+                    ? 1
+                    : dist === 1
+                      ? 0.92
+                      : dist === 2
+                        ? 0.72
+                        : dist === 3
+                          ? 0.5
+                          : 0;
+                  const scale = isActive
+                    ? 1
+                    : dist === 1
+                      ? 0.97
+                      : dist === 2
+                        ? 0.94
+                        : 0.91;
+                  const figureStyle: CSSProperties = { opacity, zIndex: 20 - dist };
+                  (figureStyle as Record<string, string | number>)["--rot"] = `${
+                    aboutRotations[index] ?? 0
+                  }deg`;
+                  (figureStyle as Record<string, string | number>)["--sc"] = scale;
+                  return (
+                    <figure
+                      key={photo.src}
+                      className={isActive ? "about-photo is-active" : "about-photo"}
+                      style={figureStyle}
+                      aria-hidden={!isActive}
+                    >
+                      <img
+                        src={photo.src}
+                        alt={isActive ? photo.alt[language] : ""}
+                        className="about-image"
+                        style={{ objectPosition: photo.position ?? "center" }}
+                        loading={index < 2 ? "eager" : "lazy"}
+                        draggable={false}
+                      />
+                    </figure>
+                  );
+                })}
               </div>
               <span className="image-caption">
                 {t.about.caption.split("|").map((line) => (
@@ -1388,7 +1421,8 @@ export default function Home() {
                 ))}
               </span>
             </div>
-            <div className="about-copy">
+
+            <div className="about-panel">
               <p className="about-counter" aria-hidden="true">
                 <span className="about-counter-current">
                   {String(aboutPhotoIndex + 1).padStart(2, "0")}
@@ -1400,47 +1434,36 @@ export default function Home() {
                   {String(aboutPhotos.length).padStart(2, "0")}
                 </span>
               </p>
-              <p key={aboutPhotoIndex} className="about-slide-text">
-                {t.about.slides[aboutPhotoIndex]}
-              </p>
-              <div className="signature">
-                <span className="signature-line" />
-                <span>{t.about.signature}</span>
+
+              <div className="about-copy">
+                <p key={aboutPhotoIndex} className="about-slide-text">
+                  {t.about.slides[aboutPhotoIndex]}
+                </p>
+                <div className="signature">
+                  <span className="signature-line" />
+                  <span>{t.about.signature}</span>
+                </div>
+              </div>
+
+              <div className="about-nav">
+                <button
+                  type="button"
+                  className="about-nav-btn about-nav-prev"
+                  aria-label={t.about.prevSlide}
+                  onClick={() => showAboutPhoto(aboutPhotoIndex - 1)}
+                >
+                  <span aria-hidden="true">‹</span>
+                </button>
+                <button
+                  type="button"
+                  className="about-nav-btn about-nav-next"
+                  aria-label={t.about.nextSlide}
+                  onClick={() => showAboutPhoto(aboutPhotoIndex + 1)}
+                >
+                  <span aria-hidden="true">›</span>
+                </button>
               </div>
             </div>
-          </div>
-
-          <div className="about-controls">
-            <button
-              type="button"
-              className="about-arrow"
-              aria-label={t.about.prevSlide}
-              onClick={() => showAboutPhoto(aboutPhotoIndex - 1)}
-            >
-              <span aria-hidden="true">‹</span>
-            </button>
-            <div className="about-slider-dots" aria-label={t.about.slideLabel}>
-              {aboutPhotos.map((photo, index) => (
-                <button
-                  key={photo.src}
-                  type="button"
-                  className={index === aboutPhotoIndex ? "is-active" : ""}
-                  aria-label={`${t.about.slideLabel} ${index + 1}`}
-                  aria-current={
-                    index === aboutPhotoIndex ? "true" : undefined
-                  }
-                  onClick={() => showAboutPhoto(index)}
-                />
-              ))}
-            </div>
-            <button
-              type="button"
-              className="about-arrow"
-              aria-label={t.about.nextSlide}
-              onClick={() => showAboutPhoto(aboutPhotoIndex + 1)}
-            >
-              <span aria-hidden="true">›</span>
-            </button>
           </div>
         </div>
         <div className="certificates">
