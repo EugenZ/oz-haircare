@@ -1,17 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { PwaRegister } from "./pwa-register";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 // Next 16 keeps themeColor in the viewport export (not in metadata).
 export const viewport: Viewport = {
@@ -53,12 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-        <PwaRegister />
-      </body>
+      <body className="antialiased">{children}<PwaRegister /></body>
     </html>
   );
 }
