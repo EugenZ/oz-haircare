@@ -1128,7 +1128,7 @@ export default function Home() {
   const [language, setLanguage] = useState<Language>("ru");
   const [menuOpen, setMenuOpen] = useState(false);
   const [openService, setOpenService] = useState<string | null>(null);
-  const [extrasOpen, setExtrasOpen] = useState(true);
+  const [extrasOpen, setExtrasOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [aboutPhotoIndex, setAboutPhotoIndex] = useState(0);
