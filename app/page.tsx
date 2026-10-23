@@ -1436,7 +1436,7 @@ export default function Home() {
               </p>
 
               <div className="about-copy">
-                <p key={aboutPhotoIndex} className="about-slide-text">
+                <p key={aboutPhotoIndex} aria-live="polite" className="about-slide-text">
                   {t.about.slides[aboutPhotoIndex]}
                 </p>
                 <div className="signature">
