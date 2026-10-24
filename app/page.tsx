@@ -150,7 +150,7 @@ const copy = {
       titleEm: "разговора.",
       text: "Выберите дату и время, оставьте контакты — я подтвержу запись и задам несколько вопросов перед встречей.",
       location: "Лос Анджелес · очно",
-      schedule: "Пн–Сб · 10:00–20:00",
+      schedule: "Пн–Сб · 10:00–18:00",
       date: "Дата",
       time: "Время",
       pickDate: "Выберите день",
@@ -293,7 +293,7 @@ const copy = {
       titleEm: "conversation.",
       text: "Choose a date and time, leave your details — I will confirm the visit and ask a few questions beforehand.",
       location: "Los Angeles · in person",
-      schedule: "Mon–Sat · 10:00–20:00",
+      schedule: "Mon–Sat · 10AM–6PM",
       date: "Date",
       time: "Time",
       pickDate: "Choose a day",
@@ -922,7 +922,6 @@ const TIME_SLOTS = [
   "16:00",
   "17:00",
   "18:00",
-  "19:00",
 ];
 
 function toISODate(date: Date) {
