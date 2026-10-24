@@ -832,7 +832,7 @@ const galleryImages = [
 // Add another portrait by placing a file in public/ and appending it here.
 const aboutPhotos: AboutPhoto[] = [
   {
-    src: "/about-01.png",
+    src: "/about-01.jpg",
     alt: {
       ru: "Ольга в кабинете с прибором для анализа волос",
       en: "Olga in the treatment room with a hair-analysis device",
@@ -840,7 +840,7 @@ const aboutPhotos: AboutPhoto[] = [
     position: "50% 22%",
   },
   {
-    src: "/about-02.png",
+    src: "/about-02.jpg",
     alt: {
       ru: "Ольга проводит процедуру ухода за волосами",
       en: "Olga performing a hair care treatment",
@@ -850,10 +850,10 @@ const aboutPhotos: AboutPhoto[] = [
   {
     src: "/about-03.jpg",
     alt: {
-      ru: "Длинные волосы в мягком свете",
-      en: "Long wavy hair in soft light",
+      ru: "Прибор для анализа структуры волос с увеличением",
+      en: "A hair-analysis device magnifying the hair structure on its screen",
     },
-    position: "center 30%",
+    position: "center 50%",
   },
   {
     src: "/about-04.jpg",
@@ -866,42 +866,42 @@ const aboutPhotos: AboutPhoto[] = [
   {
     src: "/about-05.jpg",
     alt: {
-      ru: "Прикосновение к волосам",
-      en: "A hand touching hair",
+      ru: "Специалист изучает кожу головы, раздвигая волосы",
+      en: "A specialist examining the scalp by parting the hair",
     },
-    position: "center 40%",
+    position: "center 45%",
   },
   {
     src: "/about-06.jpg",
     alt: {
-      ru: "Длинные волосы на солнце",
-      en: "Long hair in warm sunlight",
+      ru: "Линия средств для домашнего ухода за волосами",
+      en: "A set of products for at-home hair care",
     },
-    position: "center 30%",
+    position: "center 50%",
   },
   {
     src: "/about-07.jpg",
     alt: {
-      ru: "Блондинка приподнимает волосы",
-      en: "A woman lifting her hair",
+      ru: "Проверка прочности и эластичности пряди волос",
+      en: "Testing the strength and elasticity of a hair strand",
     },
-    position: "center 35%",
+    position: "center 50%",
   },
   {
     src: "/about-08.jpg",
     alt: {
-      ru: "Длинные волосы в мягком свете",
-      en: "Long wavy hair in soft light",
+      ru: "План домашнего ухода за волосами на неделю",
+      en: "A weekly plan for at-home hair care",
     },
-    position: "center 35%",
+    position: "center 50%",
   },
   {
     src: "/about-09.jpg",
     alt: {
-      ru: "Длинные волосы на солнце",
-      en: "Long hair in warm sunlight",
+      ru: "Длинные здоровые волосы со спины",
+      en: "Long, healthy hair seen from behind",
     },
-    position: "center 35%",
+    position: "center 38%",
   },
 ];
 
