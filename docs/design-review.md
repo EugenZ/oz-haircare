@@ -164,3 +164,14 @@ certificateSwipeStart`. `timeSlots = selectedDate ? availableSlots(selectedDate)
 > (`npm test` 3/3, `npm run lint` 0 ошибок, 6 известных warnings). Основное влияние
 > будущих правок сосредоточено в одном файле `app/page.tsx`; тест #2 — главный
 > «барьер» и покрывает почти все клиентские интеракции.
+
+### Canvas — сгенерированные варианты (Superdesign)
+- **V1 · Production-ready polish** — доводка до прод-состояния без смены языка:
+  https://p.superdesign.dev/draft/bcf214b6-9bf2-4869-b7dd-c444fb087356
+  (7 credits · draft `bcf214b6`)
+- **V2 · Bolder editorial direction** — альтернативная, более выразительная редакция
+  в той же дизайн-системе:
+  https://p.superdesign.dev/draft/5de2ce08-76ed-4f55-8405-ce19ddd2afb0
+  (6 credits · draft `5de2ce08`)
+- Канва проекта:
+  https://superdesign.dev/teams/6a493359-ac8b-4904-ae21-ce761e8d2c87/projects/7581a039-1f2c-428b-97e1-054f1e93fd05
