@@ -862,16 +862,16 @@ const aboutPhotos: AboutPhoto[] = [
   {
     src: "/about-02.jpg",
     alt: {
-      ru: "Ольга проводит процедуру ухода за волосами",
-      en: "Olga performing a hair care treatment",
+      ru: "Ольга сушит волосы клиента феном в кабинете",
+      en: "Olga drying a client's hair with a hair dryer in the salon",
     },
     position: "35% 18%",
   },
   {
     src: "/about-03.jpg",
     alt: {
-      ru: "Прибор для анализа структуры волос с увеличением",
-      en: "A hair-analysis device magnifying the hair structure on its screen",
+      ru: "Консультация клиента перед процедурой",
+      en: "A client consultation before a treatment",
     },
     position: "center 50%",
   },
