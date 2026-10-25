@@ -9,9 +9,11 @@ import {
   useRef,
   useState,
 } from "react";
+import { TIME_SLOTS } from "@/lib/slots";
 
 type Language = "ru" | "en";
 type Localized = { ru: string; en: string };
+type ContactType = "phone" | "instagram";
 
 type ServicePoint = {
   text: Localized;
@@ -160,7 +162,11 @@ const copy = {
       name: "Ваше имя",
       namePlaceholder: "Как к вам обращаться?",
       contact: "Телефон или Instagram",
-      contactPlaceholder: "Где с вами связаться?",
+      contactTypeAria: "Как с вами связаться",
+      contactPhone: "Телефон",
+      contactInstagram: "Instagram",
+      contactPhonePlaceholder: "+1 310 555 0123",
+      contactInstagramPlaceholder: "@username",
       interest: "Что вас интересует?",
       select: "Выберите направление",
       serviceOptions: [
@@ -181,16 +187,19 @@ const copy = {
       submit: "Отправить заявку",
       privacy:
         "Нажимая кнопку, вы соглашаетесь на обработку персональных данных.",
-      successTitle: "Заявка принята.",
+      successTitle: "Заявка отправлена.",
       successText:
-        "Спасибо. Я подтвержу выбранные дату и время в ближайшее время.",
+        "Спасибо! Заявка ожидает подтверждения — я проверю выбранное время и подтвержу запись.",
+      successPhone: "Подтверждение придёт SMS на ваш номер.",
+      successInstagram: "Подтверждение придёт сообщением в Instagram.",
+      successEmail:
+        "На email уже отправлено письмо о заявке, а после подтверждения придёт приглашение в календарь.",
       another: "Отправить ещё одну заявку",
       email: "Email",
       emailPlaceholder: "you@example.com",
+      emailHint:
+        "Пришлём подтверждение и приглашение в Google / Apple Calendar.",
       sending: "Отправляю…",
-      inviteCta: "Добавить в календарь",
-      inviteHint:
-        "Приглашение-ссылка — нажмите, чтобы добавить встречу в свой календарь.",
       errorText: "Не удалось отправить заявку. Попробуйте ещё раз.",
       retry: "Попробовать снова",
     },
@@ -313,7 +322,11 @@ const copy = {
       name: "Your name",
       namePlaceholder: "What should I call you?",
       contact: "Phone or Instagram",
-      contactPlaceholder: "Where can I reach you?",
+      contactTypeAria: "How should I reach you",
+      contactPhone: "Phone",
+      contactInstagram: "Instagram",
+      contactPhonePlaceholder: "+1 310 555 0123",
+      contactInstagramPlaceholder: "@username",
       interest: "What are you looking for?",
       select: "Choose a direction",
       serviceOptions: [
@@ -334,16 +347,18 @@ const copy = {
       submit: "Send request",
       privacy:
         "By sending this form, you agree to the processing of personal data.",
-      successTitle: "Request received.",
+      successTitle: "Request sent.",
       successText:
-        "Thank you. I will confirm the date and time you chose shortly.",
+        "Thank you! Your request is waiting for confirmation — I'll check the time and confirm your visit.",
+      successPhone: "The confirmation will come by text message.",
+      successInstagram: "The confirmation will come as an Instagram message.",
+      successEmail:
+        "We've emailed you about the request; the calendar invite follows once it's confirmed.",
       another: "Send another request",
       email: "Email",
       emailPlaceholder: "you@example.com",
+      emailHint: "We'll send the confirmation and a Google / Apple Calendar invite.",
       sending: "Sending…",
-      inviteCta: "Add to calendar",
-      inviteHint:
-        "Invite link — click to add this meeting to your calendar.",
       errorText: "We couldn't send your request. Please try again.",
       retry: "Try again",
     },
@@ -932,18 +947,6 @@ const aboutRotations = [5, -3, 7, -6, 4, -8, 6, -4, 2];
 // Add a diploma or certificate by placing a file in public/ and appending it here.
 const certificates: AboutPhoto[] = [];
 
-const TIME_SLOTS = [
-  "10:00",
-  "11:00",
-  "12:00",
-  "13:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "18:00",
-];
-
 function toISODate(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -1160,7 +1163,8 @@ export default function Home() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [contactType, setContactType] = useState<ContactType>("phone");
+  const [submittedWithEmail, setSubmittedWithEmail] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [busyFor, setBusyFor] = useState<{ date: string; slots: string[] }>({
     date: "",
@@ -1272,7 +1276,7 @@ export default function Home() {
     setSelectedDate("");
     setBusyFor({ date: "", slots: [] });
     setSubmitError(null);
-    setInviteUrl(null);
+    setSubmittedWithEmail(false);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -1281,6 +1285,7 @@ export default function Home() {
     const data = new FormData(form);
     const payload = {
       name: String(data.get("name") ?? "").trim(),
+      contactType,
       contact: String(data.get("contact") ?? "").trim(),
       email: String(data.get("email") ?? "").trim(),
       date: String(data.get("date") ?? "").trim(),
@@ -1303,14 +1308,12 @@ export default function Home() {
         .catch(() => ({}))) as {
         ok?: boolean;
         error?: string;
-        calendarUrl?: string;
+        status?: string;
       };
       if (!response.ok || json.ok === false) {
         throw new Error(json.error ?? `HTTP ${response.status}`);
       }
-      setInviteUrl(
-        typeof json.calendarUrl === "string" ? json.calendarUrl : null,
-      );
+      setSubmittedWithEmail(payload.email !== "");
       setSubmitted(true);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : String(error));
@@ -1837,19 +1840,12 @@ export default function Home() {
               <span className="success-mark">✓</span>
               <h3>{t.booking.successTitle}</h3>
               <p>{t.booking.successText}</p>
-              {inviteUrl ? (
-                <div className="booking-invite">
-                  <a
-                    className="button button-light"
-                    href={inviteUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {t.booking.inviteCta} <span>↗</span>
-                  </a>
-                  <p className="booking-invite-hint">{t.booking.inviteHint}</p>
-                </div>
-              ) : null}
+              <p className="booking-pending-note">
+                {contactType === "instagram"
+                  ? t.booking.successInstagram
+                  : t.booking.successPhone}
+                {submittedWithEmail ? ` ${t.booking.successEmail}` : ""}
+              </p>
               <button
                 className="text-link text-link-light"
                 type="button"
@@ -1869,22 +1865,55 @@ export default function Home() {
                   required
                 />
               </label>
-              <label>
-                <span>{t.booking.contact}</span>
-                <input
-                  type="text"
-                  name="contact"
-                  placeholder={t.booking.contactPlaceholder}
-                  required
-                />
-              </label>
+              <div className="contact-field">
+                <div
+                  className="contact-type"
+                  role="group"
+                  aria-label={t.booking.contactTypeAria}
+                >
+                  {(["phone", "instagram"] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      className={contactType === type ? "is-active" : ""}
+                      aria-pressed={contactType === type}
+                      onClick={() => setContactType(type)}
+                    >
+                      {type === "phone"
+                        ? t.booking.contactPhone
+                        : t.booking.contactInstagram}
+                    </button>
+                  ))}
+                </div>
+                <input type="hidden" name="contactType" value={contactType} />
+                <label>
+                  <span className="visually-hidden">{t.booking.contact}</span>
+                  <input
+                    key={contactType}
+                    type={contactType === "phone" ? "tel" : "text"}
+                    name="contact"
+                    inputMode={contactType === "phone" ? "tel" : "text"}
+                    autoComplete={contactType === "phone" ? "tel" : "off"}
+                    autoCapitalize="none"
+                    placeholder={
+                      contactType === "phone"
+                        ? t.booking.contactPhonePlaceholder
+                        : t.booking.contactInstagramPlaceholder
+                    }
+                    required
+                  />
+                </label>
+              </div>
               <label className="span-2">
-                <span>{t.booking.email}</span>
+                <span>
+                  {t.booking.email} <small>{t.booking.optional}</small>
+                </span>
                 <input
                   type="email"
                   name="email"
                   placeholder={t.booking.emailPlaceholder}
                 />
+                <small className="form-hint">{t.booking.emailHint}</small>
               </label>
               <label>
                 <span>{t.booking.date}</span>

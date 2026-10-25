@@ -1,64 +1,43 @@
 // POST /api/bookings — receive a "Запись на встречу" request.
 //
-// 1) Persist the request to Postgres/Neon when a connection is configured. This
-//    is best-effort: a missing or failing database must not stop notifications.
-// 2) Create a server-side Google Calendar event (when OAuth is configured) so the
-//    client is added as an attendee and Google emails them a native invite.
-// 3) Notify the practice's "meeting" mailbox and (optionally) the client by email
-//    (calendar link + .ics fallback) when an email backend is configured.
+// 1) Validate the request; the contact is a phone number OR an Instagram handle
+//    (`contactType`), the email is optional.
+// 2) Refuse a slot that is already taken (a confirmed booking or a busy Google
+//    Calendar event). Pending requests never block a slot.
+// 3) Persist it as `pending` and email Olga a link to confirm / decline /
+//    propose another time; the client (if they left an email) gets "request
+//    received". The Google Calendar event is created only on confirmation.
+//    See lib/bookings.ts for the whole lifecycle.
 //
-// GET /api/bookings — list the most recent requests (a quick inbox). Returns an
-// empty list when the database is unavailable, so it never 500s without a DB.
-import { desc } from "drizzle-orm";
-import { env as bindingEnv } from "cloudflare:workers";
-import { getDb } from "@/db";
-import { bookings } from "@/db/schema";
-import {
-  buildInviteFromPayload,
-  sendBookingNotifications,
-  type BookingPayload,
-} from "@/lib/email";
-import {
-  fetchBusySlotsForDay,
-  type GoogleCalendarConfig,
-} from "@/lib/google";
+// GET /api/bookings — the most recent requests (admin inbox), protected by
+// `Authorization: Bearer $ADMIN_API_TOKEN`.
+import { bookingContext, createBooking, listRecentBookings, slotAvailability } from "@/lib/bookings";
+import { parseContact } from "@/lib/contact";
+import { envValue } from "@/lib/env";
+import { hasBearer, unauthorized } from "@/lib/http";
+import { pickLanguage } from "@/lib/messages";
+import { isValidDate, isValidTime, slotStartsInPast } from "@/lib/time";
 
-function envValue(name: string): string | undefined {
-  const fromProcess = process.env[name];
-  if (fromProcess) return fromProcess;
-  const fromBinding = bindingEnv as unknown as Record<string, string | undefined>;
-  return fromBinding[name];
-}
-
-function isValidDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  return !Number.isNaN(Date.parse(value));
-}
-
-function isValidTime(value: string): boolean {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(value);
-  if (!match) return false;
-  const hours = Number.parseInt(match[1], 10);
-  const minutes = Number.parseInt(match[2], 10);
-  return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
-}
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
-  let raw: Partial<BookingPayload>;
+  let raw: Record<string, unknown>;
   try {
-    raw = (await request.json()) as Partial<BookingPayload>;
+    raw = (await request.json()) as Record<string, unknown>;
   } catch {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
+  const field = (key: string): string => String(raw?.[key] ?? "").trim();
 
-  const name = String(raw.name ?? "").trim();
-  const contact = String(raw.contact ?? "").trim();
-  const email = String(raw.email ?? "").trim();
-  const date = String(raw.date ?? "").trim();
-  const time = String(raw.time ?? "").trim();
-  const service = String(raw.service ?? "").trim();
-  const message = String(raw.message ?? "").trim();
-  const language = raw.language === "en" ? "en" : "ru";
+  const name = field("name");
+  const contact = field("contact");
+  const email = field("email");
+  const date = field("date");
+  const time = field("time");
+  const service = field("service");
+  const message = field("message");
+  const language = pickLanguage(raw?.language);
+  const say = (ru: string, en: string) => (language === "en" ? en : ru);
 
   if (!name || !contact || !date || !time) {
     return Response.json(
@@ -69,37 +48,44 @@ export async function POST(request: Request) {
   if (!isValidDate(date) || !isValidTime(time)) {
     return Response.json({ error: "date and time must be valid" }, { status: 400 });
   }
-
-  const payload: BookingPayload = { name, contact, email, date, time, service, message, language };
-
-  // Build the calendar invite up front so the response can hand the client a
-  // one-click "add to calendar" link even when email / Google is not configured.
-  const invite = buildInviteFromPayload(
-    payload,
-    language === "en" ? "Consultation" : "Запись на встречу",
-  );
-
-  // Build the Google calendar config once and reuse it for the double-booking
-  // guard and for creating the server event / attendee invite.
-  const google: GoogleCalendarConfig = {
-    clientId: envValue("GOOGLE_OAUTH_CLIENT_ID"),
-    clientSecret: envValue("GOOGLE_OAUTH_CLIENT_SECRET"),
-    refreshToken: envValue("GOOGLE_OAUTH_REFRESH_TOKEN"),
-    calendarId: envValue("GOOGLE_CALENDAR_ID"),
-  };
-
-  // 0) Guard: never double-book a time that is already busy on the practice's
-  // calendar. Fail open when the calendar can't be checked so a transient
-  // error never drops a legitimate booking.
-  const busy = await fetchBusySlotsForDay(date, [time], google);
-  if (busy.attempted && busy.ok && busy.busy.includes(time)) {
+  if (slotStartsInPast(date, time)) {
+    return Response.json(
+      { ok: false, error: say("Это время уже прошло.", "This time has already passed.") },
+      { status: 400 },
+    );
+  }
+  if (email && !EMAIL_PATTERN.test(email)) {
+    return Response.json(
+      { ok: false, error: say("Проверьте email.", "Please check the email address.") },
+      { status: 400 },
+    );
+  }
+  const parsed = parseContact(raw.contactType, contact, envValue("DEFAULT_PHONE_COUNTRY"));
+  if (!parsed.ok) {
     return Response.json(
       {
         ok: false,
+        field: "contact",
+        contactType: parsed.type,
         error:
-          language === "en"
-            ? "This time is already booked. Please choose another slot."
-            : "Это время уже занято. Пожалуйста, выберите другое время.",
+          parsed.type === "phone"
+            ? say("Проверьте номер телефона.", "Please check the phone number.")
+            : say("Проверьте ник в Instagram.", "Please check the Instagram username."),
+      },
+      { status: 400 },
+    );
+  }
+
+  const ctx = bookingContext(request);
+  const slot = await slotAvailability(date, time, ctx);
+  if (slot.taken) {
+    return Response.json(
+      {
+        ok: false,
+        error: say(
+          "Это время уже занято. Пожалуйста, выберите другое время.",
+          "This time is already booked. Please choose another slot.",
+        ),
         date,
         time,
       },
@@ -107,71 +93,40 @@ export async function POST(request: Request) {
     );
   }
 
-  // 1) Persist to Postgres/Neon when available.
-  let id: number | undefined;
-  let persisted = false;
-  let dbError: string | undefined;
-  try {
-    const db = getDb();
-    const [row] = await db
-      .insert(bookings)
-      .values({
-        name,
-        contact,
-        email,
-        date,
-        time,
-        service,
-        message,
-        status: "new",
-        calendarUrl: invite.calendarUrl ?? "",
-      })
-      .returning();
-    id = row?.id;
-    persisted = id !== undefined;
-  } catch (error) {
-    dbError = error instanceof Error ? error.message : "database unavailable";
-    console.warn("[bookings] could not persist to database:", dbError);
-  }
-
-  // 2) Create a server-side Google Calendar event (when OAuth is configured) and
-  // 3) notify the practice + invite the client by email (best-effort).
-  const notify = await sendBookingNotifications(
-    payload,
+  const result = await createBooking(
     {
-      apiUrl: envValue("EMAIL_API_URL"),
-      apiKey: envValue("EMAIL_API_KEY"),
-      notifyEmail: envValue("BOOKING_NOTIFY_EMAIL") ?? envValue("OLGA_EMAIL"),
-      fromEmail: envValue("EMAIL_FROM"),
-      siteUrl: envValue("SITE_URL"),
-      google,
+      name,
+      contact,
+      contactType: parsed.type,
+      contactNormalized: parsed.normalized,
+      email,
+      date,
+      time,
+      service,
+      message,
+      language,
     },
+    ctx,
   );
 
   return Response.json(
     {
       ok: true,
-      id,
-      persisted,
-      calendarUrl: notify.calendarUrl,
-      ics: notify.ics,
-      calendarEvent: notify.calendarEvent,
-      notify,
-      ...(dbError ? { dbError } : {}),
+      id: result.id,
+      persisted: result.persisted,
+      status: "pending",
+      contactType: parsed.type,
+      notify: result.notify,
+      ...(result.dbError ? { dbError: "database unavailable" } : {}),
     },
     { status: 201 },
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!hasBearer(request, "ADMIN_API_TOKEN")) return unauthorized();
   try {
-    const db = getDb();
-    const rows = await db
-      .select()
-      .from(bookings)
-      .orderBy(desc(bookings.createdAt), desc(bookings.id))
-      .limit(50);
-    return Response.json({ bookings: rows });
+    return Response.json({ bookings: await listRecentBookings() });
   } catch (error) {
     const message = error instanceof Error ? error.message : "database unavailable";
     return Response.json({ bookings: [], error: message }, { status: 200 });

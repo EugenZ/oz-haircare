@@ -232,9 +232,39 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .form-error { border: 1px solid rgba(245,241,233,.25); padding: 38px; }
 .form-error p { color: rgba(245,241,233,.75); font-size: 13px; line-height: 1.55; margin: 0 0 8px; }
 .booking-form button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-.booking-invite { margin-top: 26px; }
-.booking-invite .button { width: 100%; }
-.booking-invite-hint { color: rgba(245,241,233,.5); font-size: 11px; line-height: 1.5; margin: 10px 0 0; }
+.form-success p.booking-pending-note { color: rgba(245,241,233,.5); font-size: 12px; margin-top: 10px; }
+.contact-field { display: flex; flex-direction: column; gap: 10px; }
+.booking-form .contact-type { display: flex; gap: 6px; }
+.booking-form .contact-type button { background: transparent; border: 1px solid rgba(245,241,233,.32); border-radius: var(--radius-pill); color: rgba(245,241,233,.7); font-size: 10px; letter-spacing: .12em; margin-top: 0; padding: 6px 12px; text-transform: uppercase; transition: background .2s ease, color .2s ease; }
+.booking-form .contact-type button.is-active { background: var(--clay-light); border-color: var(--clay-light); color: var(--ink); }
+.booking-form .contact-type button:focus-visible { outline: 1px solid var(--clay-light); outline-offset: 2px; }
+.booking-form label .visually-hidden, .visually-hidden { border: 0; clip: rect(0 0 0 0); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; white-space: nowrap; width: 1px; }
+
+/* Booking pages: Olga's manage page (/booking/manage) + the client's page (/booking/view). */
+.booking-page { background: var(--cream); min-height: 100vh; padding: 28px 6vw 80px; }
+.booking-page-header { margin-bottom: 36px; }
+.booking-page-header .brand-logo { height: 64px; }
+.booking-card { background: var(--paper); border: 1px solid var(--line); margin: 0 auto; max-width: 640px; padding: 40px; }
+.booking-card h1 { font-size: clamp(36px, 5vw, 56px); margin-bottom: 20px; }
+.booking-card > p:not(.eyebrow) { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+.booking-card .eyebrow { margin-bottom: 14px; }
+.booking-facts { border-top: 1px solid var(--line); display: grid; font-size: 14px; gap: 10px 20px; grid-template-columns: max-content 1fr; margin: 24px 0; padding-top: 18px; }
+.booking-facts dt { color: var(--ink-soft); font-size: 11px; letter-spacing: .08em; padding-top: 2px; text-transform: uppercase; }
+.booking-facts dd { margin: 0; overflow-wrap: anywhere; }
+.booking-facts a { border-bottom: 1px solid currentColor; }
+.booking-slot { font-family: var(--display); font-size: 26px; letter-spacing: -.02em; margin: 6px 0 18px; }
+.booking-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0; }
+.booking-actions form { margin: 0; }
+.booking-card .button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+.booking-notice { border-left: 3px solid var(--success); background: var(--surface); font-size: 13px; line-height: 1.5; margin: 0 0 18px; padding: 12px 14px; }
+.booking-notice.is-error { border-left-color: var(--danger); }
+.booking-propose { border-top: 1px solid var(--line); display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 30px; padding-top: 22px; }
+.booking-propose .eyebrow, .booking-propose button { grid-column: 1 / -1; }
+.booking-propose button { justify-self: start; }
+.booking-propose label { border-bottom: 1px solid var(--line); display: block; padding-bottom: 8px; }
+.booking-propose label span { color: var(--ink-soft); display: block; font-size: 10px; letter-spacing: .12em; margin-bottom: 6px; text-transform: uppercase; }
+.booking-propose input, .booking-propose select { background: transparent; border: 0; color: var(--ink); font-size: 14px; outline: 0; padding: 3px 0; width: 100%; }
+.booking-links { margin-top: 20px; }
 
 .site-footer { align-items: center; background: var(--cream); display: grid; gap: 20px; grid-template-columns: 1.4fr 1fr .7fr .8fr; padding-bottom: 28px; padding-top: 28px; }
 .site-footer .brand-logo { height: 72px; }
@@ -334,6 +364,8 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .booking-form { display: flex; flex-direction: column; }
   .booking-form button { align-self: flex-start; }
   .form-success { padding: 30px 24px; }
+  .booking-card { padding: 28px 20px; }
+  .booking-propose { grid-template-columns: 1fr; }
   .site-footer { align-items: start; display: flex; flex-direction: column; gap: 18px; }
 }
 

@@ -3,12 +3,12 @@
 // Requires a Google OAuth refresh token (a personal Gmail/Calendar account, or a
 // service account with domain-wide delegation). See docs/GOOGLE_CALENDAR_SETUP.md
 // for the full setup. When the credentials are not configured, createCalendarEvent
-// returns { attempted: false, ok: true } and the caller falls back to a Google
-// Calendar "add to calendar" link + downloadable .ics (no OAuth needed).
+// returns { attempted: false, ok: true } and nothing is written to the calendar.
 //
-// On success the client is added as an attendee, so Google emails them a native
-// calendar invite automatically; the returned htmlLink is a direct link to the
-// created event that we hand back to the booking form.
+// The event is created only once Olga confirms a booking (lib/bookings.ts). The
+// client is added as an attendee only when an attendee email is passed (the
+// GOOGLE_INVITE_ATTENDEE flag); then `sendUpdates=all` makes Google email them a
+// native invite. By default the client gets our own email with an .ics instead.
 
 export type GoogleCalendarConfig = {
   clientId?: string;
@@ -21,6 +21,7 @@ export type GoogleCalendarConfig = {
 };
 
 export type CalendarEvent = {
+  id?: string; // client-chosen event id (base32hex) — makes creation idempotent
   title: string;
   start: string; // "YYYY-MM-DDTHH:MM:00" (naive local time)
   end: string; // "YYYY-MM-DDTHH:MM:00" (naive local time)
@@ -75,8 +76,9 @@ export async function fetchAccessToken(
   }
 }
 
-// Create a Calendar event. The client's email is added as an attendee so Google
-// sends them a native invite. Returns the event's htmlLink on success.
+// Create a Calendar event. When an attendee email is given it is added to the
+// event and Google sends them a native invite. Returns the event's htmlLink on
+// success; a 409 for a known `event.id` means it already exists (a retry).
 export async function createCalendarEvent(
   event: CalendarEvent,
   attendeeEmail: string | undefined,
@@ -105,6 +107,7 @@ export async function createCalendarEvent(
   // Calendar "dateTime" is interpreted in the event's timeZone, so we pass the
   // naive local slot plus the zone.
   const body = {
+    ...(event.id ? { id: event.id } : {}),
     summary: event.title,
     start: { dateTime: event.start, timeZone },
     end: { dateTime: event.end, timeZone },
@@ -112,10 +115,11 @@ export async function createCalendarEvent(
     description: event.description,
     attendees: attendeeEmail ? [{ email: attendeeEmail, optional: false }] : [],
   };
+  const query = attendeeEmail ? "?sendUpdates=all" : "";
 
   try {
     const res = await fetchImpl(
-      `${apiBaseUrl}/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+      `${apiBaseUrl}/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events${query}`,
       {
         method: "POST",
         headers: {
@@ -125,6 +129,9 @@ export async function createCalendarEvent(
         body: JSON.stringify(body),
       },
     );
+    if (res.status === 409 && event.id) {
+      return { attempted: true, ok: true, eventId: event.id };
+    }
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       return {

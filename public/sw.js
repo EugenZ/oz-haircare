@@ -30,6 +30,8 @@ self.addEventListener("fetch", (event) => {
   }
   // Only manage same-origin requests; let cross-origin (CDN/fonts) pass through.
   if (url.origin !== self.location.origin) return;
+  // Never cache API responses or the tokenized booking pages.
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/booking/")) return;
 
   event.respondWith(
     fetch(req)
