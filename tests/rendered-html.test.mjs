@@ -14,9 +14,24 @@ registerHooks({
         shortCircuit: true,
       };
     }
+    // Pure lib/*.ts modules import siblings without an extension (bundler
+    // style); resolve those to .ts so Node's type stripping can load them.
+    if (
+      /^\.\.?\//.test(specifier) &&
+      !/\.[cm]?[jt]sx?$/.test(specifier) &&
+      context.parentURL?.endsWith(".ts")
+    ) {
+      return nextResolve(`${specifier}.ts`, context);
+    }
     return nextResolve(specifier, context);
   },
 });
+
+// Node >= 22.18 / 23.6 strips TypeScript types natively; older runtimes skip
+// the unit tests that import lib/*.ts directly.
+const canImportTs = Boolean(process.features?.typescript);
+const tsOnly = canImportTs ? {} : { skip: "requires Node TypeScript type stripping" };
+const importLib = (name) => import(new URL(`../lib/${name}.ts`, import.meta.url).href);
 
 const projectRoot = new URL("../", import.meta.url);
 const designSystemRoot = new URL("../opendesign/root-ritual/", import.meta.url);
@@ -150,12 +165,16 @@ test("ships a complete OpenDesign design-system package", async () => {
   }
 });
 
-test("accepts a booking request and returns a calendar invite", async () => {
+// A slot safely in the future (Mondays at 10:00, Los Angeles).
+const FUTURE_DATE = "2030-11-04";
+
+test("accepts a booking request as pending without a calendar event", async () => {
   const response = await postBooking({
     name: "Test Person",
+    contactType: "phone",
     contact: "+1 555 000 0000",
     email: "test@example.com",
-    date: "2026-11-02",
+    date: FUTURE_DATE,
     time: "10:00",
     service: "Full hair restoration ritual",
     message: "hello",
@@ -165,9 +184,40 @@ test("accepts a booking request and returns a calendar invite", async () => {
   assert.equal(response.status, 201);
   const body = await response.json();
   assert.equal(body.ok, true);
-  assert.match(String(body.calendarUrl), /calendar\.google\.com\/calendar\/render/);
-  assert.match(String(body.ics), /BEGIN:VCALENDAR/);
-  assert.match(String(body.ics), /DTSTART:20261102T100000/);
+  assert.equal(body.status, "pending");
+  assert.equal(body.contactType, "phone");
+  assert.equal(body.persisted, false); // no DATABASE_URL in tests
+  assert.equal(body.calendarUrl, undefined);
+  assert.equal(body.calendarEvent, undefined);
+});
+
+test("validates the phone / Instagram contact and the slot", async () => {
+  const base = {
+    name: "Test Person",
+    date: FUTURE_DATE,
+    time: "10:00",
+    language: "en",
+  };
+
+  const badHandle = await postBooking({ ...base, contactType: "instagram", contact: "not a handle!" });
+  assert.equal(badHandle.status, 400);
+  const badHandleBody = await badHandle.json();
+  assert.equal(badHandleBody.field, "contact");
+  assert.match(badHandleBody.error, /Instagram/);
+
+  const badPhone = await postBooking({ ...base, contactType: "phone", contact: "12" });
+  assert.equal(badPhone.status, 400);
+  assert.match((await badPhone.json()).error, /phone/);
+
+  const badEmail = await postBooking({ ...base, contact: "@olga.client", email: "nope" });
+  assert.equal(badEmail.status, 400);
+
+  const past = await postBooking({ ...base, contact: "+13105550123", date: "2020-01-06" });
+  assert.equal(past.status, 400);
+
+  const instagram = await postBooking({ ...base, contactType: "instagram", contact: "https://instagram.com/Olga.Client" });
+  assert.equal(instagram.status, 201);
+  assert.equal((await instagram.json()).contactType, "instagram");
 });
 
 test("rejects an incomplete booking request", async () => {
@@ -178,26 +228,36 @@ test("rejects an incomplete booking request", async () => {
   assert.match(body.error, /required/);
 });
 
-test("wires the booking form to persistence and notifications", async () => {
-  const [page, route, email] = await Promise.all([
+test("wires the booking form to the pending flow and the contact toggle", async () => {
+  const [page, route, bookingsLib, email] = await Promise.all([
     readFile(new URL("app/page.tsx", projectRoot), "utf8"),
     readFile(new URL("app/api/bookings/route.ts", projectRoot), "utf8"),
+    readFile(new URL("lib/bookings.ts", projectRoot), "utf8"),
     readFile(new URL("lib/email.ts", projectRoot), "utf8"),
   ]);
 
   assert.match(page, /fetch\("\/api\/bookings"/);
   assert.match(page, /name="email"/);
-  assert.match(page, /inviteUrl/);
+  assert.match(page, /name="contactType"/);
+  assert.match(page, /setContactType\(type\)/);
+  assert.match(page, /aria-pressed=\{contactType === type\}/);
+  assert.match(page, /contactType === "phone" \? "tel" : "text"/);
+  assert.match(page, /t\.booking\.emailHint/);
+  assert.match(page, /t\.booking\.successInstagram/);
+  assert.match(page, /t\.booking\.successPhone/);
+  assert.doesNotMatch(page, /inviteUrl/);
   assert.match(route, /export async function POST/);
-  assert.match(route, /getDb\(\)/);
-  assert.match(route, /bookings/);
-  assert.match(route, /sendBookingNotifications/);
+  assert.match(route, /createBooking/);
+  assert.match(route, /parseContact/);
+  assert.doesNotMatch(route, /createCalendarEvent/);
+  assert.match(bookingsLib, /getDb\(\)/);
+  assert.match(bookingsLib, /status: "pending"/);
   assert.match(email, /buildCalendarInviteUrl/);
   assert.match(email, /buildIcs/);
-  assert.match(email, /sendBookingNotifications/);
+  assert.match(email, /attachments/);
 });
 
-test("creates a server Google Calendar event when OAuth is configured", async () => {
+test("a submitted booking emails Olga and the client but creates no calendar event", async () => {
   process.env.GOOGLE_OAUTH_CLIENT_ID = "test-client";
   process.env.GOOGLE_OAUTH_CLIENT_SECRET = "test-secret";
   process.env.GOOGLE_OAUTH_REFRESH_TOKEN = "test-refresh";
@@ -211,8 +271,9 @@ test("creates a server Google Calendar event when OAuth is configured", async ()
   let eventHits = 0;
   let availabilityHits = 0;
   let emailHits = 0;
+  const emails = [];
   const realFetch = globalThis.fetch;
-  globalThis.fetch = async (url) => {
+  globalThis.fetch = async (url, init) => {
     const u = String(url);
     if (u.includes("oauth2.googleapis.com/token")) {
       tokenHits += 1;
