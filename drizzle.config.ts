@@ -15,11 +15,22 @@ function connectionString(): string | undefined {
   return `postgresql://${auth}${host}:${port}/${database}`;
 }
 
+// Commands that talk to the database must not silently skip: in the deploy
+// build (`npm run db:migrate && npm run build`) a missing DATABASE_URL has to
+// fail the build instead of shipping code ahead of the schema.
+const needsDatabase = process.argv.some((arg) =>
+  ["migrate", "push", "pull", "introspect", "studio"].includes(arg),
+);
+const url = connectionString();
+if (needsDatabase && !url) {
+  throw new Error(
+    "drizzle-kit: DATABASE_URL (or PGUSER/PGHOST/PGPASSWORD) is not set. In Cloudflare Workers Builds add it as a build variable.",
+  );
+}
+
 export default defineConfig({
   out: "./drizzle",
   schema: "./db/schema.ts",
   dialect: "postgresql",
-  ...(connectionString()
-    ? { dbCredentials: { url: connectionString() } }
-    : {}),
+  ...(url ? { dbCredentials: { url } } : {}),
 });

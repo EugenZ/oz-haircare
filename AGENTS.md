@@ -28,7 +28,8 @@ Requires Node ≥ 22.13.0.
 - `npm run build` / `npm run start` — build and serve production output.
 - `npm test` — build, then `node --test tests/rendered-html.test.mjs`; the full gate.
 - `npm run lint` — ESLint (ignores `dist`/`.next`).
-- `npm run db:generate` — generate migrations after editing `db/schema.ts`.
+- `npm run db:generate` — generate migrations after editing `db/schema.ts`; commit the `drizzle/` output.
+- `npm run db:migrate` — apply pending migrations (`drizzle-kit migrate`, needs `DATABASE_URL`). Runs on every deploy via the Workers Builds command `npm run db:migrate && npm run build`; see `docs/DEPLOY.md`. Never `drizzle-kit push` to production.
 
 ## Coding Style
 
@@ -60,7 +61,7 @@ Requires Node ≥ 22.13.0.
   D1/R2/Postgres (DATABASE_URL/PG*) and Google OAuth values out of any tracked file.
 - Don't implement routes for reserved paths (`/signin-with-chatgpt`,
   `/signout-with-chatgpt`, `/callback`); use the `app/chatgpt-auth.ts` helpers.
-- Before real use: replace placeholder Instagram links and stock images. The booking form already POSTs to `/api/bookings`. To make it live: (1) point the DB at Neon via `DATABASE_URL` (or `PGUSER`/`PGHOST`/`PGPASSWORD`) in an ignored `.env.local`, run `npm run db:generate` then `npx drizzle-kit push` to create the `bookings` + `outbox` tables (the confirm flow needs the DB); (2) for the Calendar event created on confirmation, set `GOOGLE_OAUTH_CLIENT_ID/SECRET/REFRESH_TOKEN` (see `docs/GOOGLE_CALENDAR_SETUP.md`); (3) set `BOOKING_NOTIFY_EMAIL` = Olga's meeting mailbox (`olilka.zhgirova@gmail.com`), `EMAIL_API_KEY` (Resend) and `SITE_URL`; (4) set `ADMIN_API_TOKEN` and `OUTBOX_API_TOKEN` as Worker secrets and set up the Shortcut. Without a DB the form still accepts requests and emails Olga to confirm by hand.
+- Before real use: replace placeholder Instagram links and stock images. The booking form already POSTs to `/api/bookings`. To make it live: (1) point the DB at Neon via `DATABASE_URL` (or `PGUSER`/`PGHOST`/`PGPASSWORD`) in an ignored `.env.local` and as a Workers Builds build secret; deploys run `npm run db:migrate` to create/upgrade the `bookings` + `outbox` tables (the confirm flow needs the DB; see `docs/DEPLOY.md`); (2) for the Calendar event created on confirmation, set `GOOGLE_OAUTH_CLIENT_ID/SECRET/REFRESH_TOKEN` (see `docs/GOOGLE_CALENDAR_SETUP.md`); (3) set `BOOKING_NOTIFY_EMAIL` = Olga's meeting mailbox (`olilka.zhgirova@gmail.com`), `EMAIL_API_KEY` (Resend) and `SITE_URL`; (4) set `ADMIN_API_TOKEN` and `OUTBOX_API_TOKEN` as Worker secrets and set up the Shortcut. Without a DB the form still accepts requests and emails Olga to confirm by hand.
 
 ## graphify
 
