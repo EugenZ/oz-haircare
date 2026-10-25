@@ -10,6 +10,7 @@
     "build": "vinext build",
     "start": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test:db": "npm run build && TEST_DB_USE_DATABASE_URL=1 node --env-file-if-exists=.env.local --test --test-force-exit tests/db-integration.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },

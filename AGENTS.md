@@ -45,6 +45,7 @@ Requires Node ≥ 22.13.0.
   assert on rendered HTML plus required source tokens/interactions.
 - Name cases descriptively, e.g. `test("server-renders the bilingual ROOT / RITUAL site", …)`.
 - Add a case for any new client interaction, section `id`, or design token; run `npm test` first.
+- `npm run test:db` — opt-in integration tests (`tests/db-integration.test.mjs`) for the booking lifecycle and outbox on real Neon Postgres. Uses `TEST_DATABASE_URL`, else `DATABASE_URL` from `.env.local`; each run creates a throwaway schema `test_<ts>_<rand>`, applies `drizzle/*.sql` there, points the app at it via `DATABASE_SCHEMA` (WebSocket Pool + `search_path` on the unpooled endpoint, see `db/index.ts`) and drops it with CASCADE — `public` is never touched. Google/Resend are fetch-stubbed. Skips when no URL is set; needs network access to Neon. Never set `DATABASE_SCHEMA` in production.
 
 ## Commits & Pull Requests
 
