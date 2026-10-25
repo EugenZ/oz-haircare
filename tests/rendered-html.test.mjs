@@ -522,6 +522,295 @@ test("booking form greys out busy slots from the availability endpoint", async (
   assert.match(route, /slotAvailability/);
   assert.match(route, /status: 409/);
   assert.match(availability, /fetchBusySlotsForDay/);
+  assert.match(availability, /confirmedSlotsForDay/);
   assert.match(google, /fetchBusySlotsForDay/);
   assert.match(google, /events\?/);
+});
+
+function withEnv(values) {
+  const previous = {};
+  for (const [key, value] of Object.entries(values)) {
+    previous[key] = process.env[key];
+    process.env[key] = value;
+  }
+  return () => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  };
+}
+
+test("protects the bookings inbox with ADMIN_API_TOKEN", async () => {
+  const unset = await callApi("/api/bookings", { method: "GET" });
+  assert.equal(unset.status, 401); // deny by default when the token is not configured
+
+  const restore = withEnv({ ADMIN_API_TOKEN: "admin-secret" });
+  try {
+    const wrong = await callApi("/api/bookings", {
+      method: "GET",
+      headers: { authorization: "Bearer nope" },
+    });
+    assert.equal(wrong.status, 401);
+
+    const right = await callApi("/api/bookings", {
+      method: "GET",
+      headers: { authorization: "Bearer admin-secret" },
+    });
+    assert.equal(right.status, 200);
+    assert.ok(Array.isArray((await right.json()).bookings));
+  } finally {
+    restore();
+  }
+});
+
+test("outbox claim / ack require OUTBOX_API_TOKEN and validate the channel", async () => {
+  const json = { "content-type": "application/json" };
+  const unset = await callApi("/api/outbox/claim", { method: "POST", headers: json, body: "{}" });
+  assert.equal(unset.status, 401);
+
+  const restore = withEnv({ OUTBOX_API_TOKEN: "outbox-secret" });
+  try {
+    const auth = { ...json, authorization: "Bearer outbox-secret" };
+    const missing = await callApi("/api/outbox/claim", { method: "POST", headers: json, body: "{}" });
+    assert.equal(missing.status, 401);
+
+    const badChannel = await callApi("/api/outbox/claim", {
+      method: "POST",
+      headers: auth,
+      body: JSON.stringify({ channel: "fax" }),
+    });
+    assert.equal(badChannel.status, 400);
+
+    // Authorized, but no database in tests -> 503 rather than a crash.
+    const claim = await callApi("/api/outbox/claim", {
+      method: "POST",
+      headers: auth,
+      body: JSON.stringify({ channel: "sms", limit: 5 }),
+    });
+    assert.equal(claim.status, 503);
+
+    const ackNoAuth = await callApi("/api/outbox/1/ack", {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ claim: "x", result: "sent" }),
+    });
+    assert.equal(ackNoAuth.status, 401);
+
+    const ack = await callApi("/api/outbox/1/ack", {
+      method: "POST",
+      headers: auth,
+      body: JSON.stringify({ claim: "x", result: "sent" }),
+    });
+    assert.equal(ack.status, 503);
+  } finally {
+    restore();
+  }
+});
+
+test("booking pages only render on GET; actions are POSTs that redirect back", async () => {
+  const manage = await callApi("/booking/manage?id=1&t=abc", {
+    method: "GET",
+    headers: { accept: "text/html" },
+  });
+  assert.equal(manage.status, 200);
+  assert.match(await manage.text(), /База данных недоступна/);
+
+  const view = await callApi("/booking/view?id=1&v=abc", {
+    method: "GET",
+    headers: { accept: "text/html" },
+  });
+  assert.equal(view.status, 200);
+  assert.match(await view.text(), /temporarily unavailable/);
+
+  const formPost = await callApi("/api/bookings/1/confirm", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: "token=abc",
+  });
+  assert.equal(formPost.status, 303);
+  const location = new URL(formPost.headers.get("location"));
+  assert.equal(location.pathname, "/booking/manage");
+  assert.equal(location.searchParams.get("id"), "1");
+  assert.equal(location.searchParams.get("t"), "abc");
+  assert.equal(location.searchParams.get("error"), "unavailable");
+
+  const jsonPost = await callApi("/api/bookings/1/decline", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ token: "abc" }),
+  });
+  assert.equal(jsonPost.status, 503);
+  assert.equal((await jsonPost.json()).error, "unavailable");
+
+  const badDecision = await callApi("/api/bookings/1/respond", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ token: "abc", decision: "maybe" }),
+  });
+  assert.equal(badDecision.status, 400);
+
+  const badSlot = await callApi("/api/bookings/1/propose", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ token: "abc", date: "soon", time: "10:00" }),
+  });
+  assert.equal(badSlot.status, 400);
+
+  const ics = await callApi("/api/bookings/1/ics", { method: "GET" });
+  assert.equal(ics.status, 404); // no view token
+
+  const [managePage, viewPage, sw] = await Promise.all([
+    readFile(new URL("app/booking/manage/page.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/booking/view/page.tsx", projectRoot), "utf8"),
+    readFile(new URL("public/sw.js", projectRoot), "utf8"),
+  ]);
+  for (const source of [managePage, viewPage]) {
+    assert.doesNotMatch(source, /confirmBooking|declineBooking|proposeBooking|respondToProposal/);
+  }
+  assert.match(managePage, /action=\{`\/api\/bookings\/\$\{row\.id\}\/confirm`\}/);
+  assert.match(managePage, /action=\{`\/api\/bookings\/\$\{row\.id\}\/decline`\}/);
+  assert.match(managePage, /action=\{`\/api\/bookings\/\$\{row\.id\}\/propose`\}/);
+  assert.match(managePage, /disabled=\{!canConfirm\}/);
+  assert.match(viewPage, /name="decision" value="accept"/);
+  assert.match(viewPage, /name="decision" value="decline"/);
+  assert.match(sw, /startsWith\("\/booking\/"\)/);
+});
+
+test("schema, migration and outbox enforce the booking invariants", async () => {
+  const [schema, outboxLib, bookingsLib, journal] = await Promise.all([
+    readFile(new URL("db/schema.ts", projectRoot), "utf8"),
+    readFile(new URL("lib/outbox.ts", projectRoot), "utf8"),
+    readFile(new URL("lib/bookings.ts", projectRoot), "utf8"),
+    readFile(new URL("drizzle/meta/_journal.json", projectRoot), "utf8"),
+  ]);
+  const migrations = JSON.parse(journal).entries.map((entry) => entry.tag);
+  const latest = await readFile(
+    new URL(`drizzle/${migrations.at(-1)}.sql`, projectRoot),
+    "utf8",
+  );
+
+  assert.match(schema, /bookings_confirmed_slot_idx/);
+  assert.match(schema, /\$\{table\.status\} = 'confirmed'/);
+  assert.match(schema, /pgTable\(\s*"outbox"/);
+  assert.match(latest, /CREATE TABLE "outbox"/);
+  assert.match(latest, /CREATE UNIQUE INDEX "bookings_confirmed_slot_idx"[^;]*WHERE[^;]*'confirmed'/);
+  assert.match(latest, /UPDATE "bookings" SET "status" = 'pending' WHERE "status" = 'new'/);
+
+  assert.match(outboxLib, /skipLocked: true/);
+  assert.match(outboxLib, /MAX_ATTEMPTS = 2/);
+  assert.match(outboxLib, /LEASE_HOURS = 2/);
+  // Pending requests never block a slot: only confirmed bookings are checked.
+  assert.match(bookingsLib, /eq\(bookings\.status, "confirmed"\)/);
+  assert.match(bookingsLib, /hashToken\(manageToken\)/);
+});
+
+test("parses phone and Instagram contacts", tsOnly, async () => {
+  const { parseContact, normalizePhone, normalizeInstagram } = await importLib("contact");
+
+  assert.equal(normalizePhone("(310) 555-0123"), "+13105550123");
+  assert.equal(normalizePhone("+7 916 123-45-67"), "+79161234567");
+  assert.equal(normalizePhone("8 916 123 45 67", "RU"), "+79161234567");
+  assert.equal(normalizePhone("12"), null);
+  assert.equal(normalizePhone("call me"), null);
+  assert.equal(normalizeInstagram("@Olga.Zhgirova"), "olga.zhgirova");
+  assert.equal(normalizeInstagram("https://www.instagram.com/olga_zhgirova/?hl=en"), "olga_zhgirova");
+  assert.equal(normalizeInstagram("no spaces allowed"), null);
+
+  assert.deepEqual(parseContact("phone", "+1 310 555 0123"), {
+    ok: true,
+    type: "phone",
+    normalized: "+13105550123",
+  });
+  assert.equal(parseContact(undefined, "@client").type, "instagram");
+  assert.equal(parseContact(undefined, "310 555 0123").type, "phone");
+  assert.equal(parseContact("instagram", "bad handle!").ok, false);
+});
+
+test("builds a UTC .ics invite and a Resend attachment", tsOnly, async () => {
+  const { buildIcs, buildInviteFromPayload, clientConfirmedEmail, toBase64 } =
+    await importLib("email");
+
+  const winter = buildInviteFromPayload({
+    name: "Анна",
+    contact: "+13105550123",
+    date: "2026-11-02",
+    time: "10:00",
+    service: "Полный ритуал восстановления волос и очень длинное название услуги",
+    language: "ru",
+  });
+  const ics = buildIcs(winter, "booking-7", { url: "https://oz.example/booking/view?id=7&v=x" });
+  assert.match(ics, /METHOD:PUBLISH/);
+  assert.match(ics, /DTSTART:20261102T180000Z/); // 10:00 PST
+  assert.match(ics, /DTEND:20261102T190000Z/);
+  assert.match(ics, /UID:booking-7@oz-spa/);
+  for (const line of ics.split("\r\n")) {
+    assert.ok(new TextEncoder().encode(line).length <= 75, `line too long: ${line}`);
+  }
+  assert.match(winter.calendarUrl, /dates=20261102T180000Z%2F20261102T190000Z/);
+
+  const summer = buildInviteFromPayload({
+    name: "Ann",
+    contact: "@ann",
+    date: "2026-07-01",
+    time: "10:00",
+    language: "en",
+  });
+  assert.match(buildIcs(summer), /DTSTART:20260701T170000Z/); // 10:00 PDT
+
+  const email = clientConfirmedEmail(
+    { name: "Ann", contact: "@ann", date: "2026-07-01", time: "10:00", language: "en" },
+    { viewUrl: "https://v", googleUrl: summer.calendarUrl, icsUrl: "https://ics" },
+    "BEGIN:VCALENDAR",
+  );
+  assert.match(email.subject, /confirmed/);
+  assert.deepEqual(email.attachments, [
+    { filename: "oz-spa-booking.ics", content: toBase64("BEGIN:VCALENDAR") },
+  ]);
+  assert.match(email.html, /Apple Calendar/);
+  assert.match(email.html, /Google Calendar/);
+});
+
+test("hashes tokens and derives a valid Google event id", tsOnly, async () => {
+  const { generateToken, hashToken, safeEqual, calendarEventIdFor } = await importLib("tokens");
+
+  const token = generateToken();
+  assert.match(token, /^[A-Za-z0-9_-]{43}$/);
+  assert.notEqual(token, generateToken());
+  const hash = await hashToken(token);
+  assert.match(hash, /^[0-9a-f]{64}$/);
+  assert.equal(hash, await hashToken(token));
+  assert.ok(safeEqual(hash, await hashToken(token)));
+  assert.ok(!safeEqual(hash, await hashToken("other")));
+
+  const eventId = await calendarEventIdFor(42, hash);
+  assert.match(eventId, /^[a-v0-9]{5,1024}$/);
+  assert.equal(eventId, await calendarEventIdFor(42, hash));
+});
+
+test("renders RU/EN SMS and Instagram message templates", tsOnly, async () => {
+  const { clientMessageText, formatSlot } = await importLib("messages");
+
+  const slot = formatSlot("2026-11-02", "10:00", "ru");
+  assert.match(slot, /10:00/);
+  assert.match(slot, /ноябр/);
+  const confirmed = clientMessageText("confirmed", {
+    name: "Анна",
+    language: "ru",
+    slot,
+    url: "https://oz.example/booking/view?id=1&v=t",
+  });
+  assert.match(confirmed, /подтвердила/);
+  assert.match(confirmed, /https:\/\/oz\.example\/booking\/view\?id=1&v=t/);
+
+  const proposed = clientMessageText("proposed", {
+    name: "Ann",
+    language: "en",
+    slot: formatSlot("2026-11-03", "12:00", "en"),
+    previousSlot: formatSlot("2026-11-02", "10:00", "en"),
+    url: "https://v",
+  });
+  assert.match(proposed, /suggests/);
+  assert.match(proposed, /accept or decline/);
+  assert.match(clientMessageText("declined", { name: "Ann", language: "en", slot, url: "https://site/#booking" }), /another time/);
 });
