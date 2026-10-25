@@ -3,6 +3,8 @@
 import {
   CSSProperties,
   FormEvent,
+  Fragment,
+  KeyboardEvent,
   PointerEvent,
   useEffect,
   useSyncExternalStore,
@@ -1165,6 +1167,16 @@ export default function Home() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [contactType, setContactType] = useState<ContactType>("phone");
   const [submittedWithEmail, setSubmittedWithEmail] = useState(false);
+
+  const handleContactTypeKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+    event.preventDefault();
+    const next: ContactType = contactType === "phone" ? "instagram" : "phone";
+    setContactType(next);
+    event.currentTarget.parentElement
+      ?.querySelector<HTMLButtonElement>(`[data-contact-type="${next}"]`)
+      ?.focus();
+  };
   const [selectedDate, setSelectedDate] = useState("");
   const [busyFor, setBusyFor] = useState<{ date: string; slots: string[] }>({
     date: "",
@@ -1868,21 +1880,27 @@ export default function Home() {
               <div className="contact-field">
                 <div
                   className="contact-type"
-                  role="group"
+                  role="radiogroup"
                   aria-label={t.booking.contactTypeAria}
                 >
-                  {(["phone", "instagram"] as const).map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      className={contactType === type ? "is-active" : ""}
-                      aria-pressed={contactType === type}
-                      onClick={() => setContactType(type)}
-                    >
-                      {type === "phone"
-                        ? t.booking.contactPhone
-                        : t.booking.contactInstagram}
-                    </button>
+                  {(["phone", "instagram"] as const).map((type, index) => (
+                    <Fragment key={type}>
+                      {index > 0 ? <span aria-hidden="true">/</span> : null}
+                      <button
+                        type="button"
+                        role="radio"
+                        className={contactType === type ? "is-active" : ""}
+                        aria-checked={contactType === type}
+                        tabIndex={contactType === type ? 0 : -1}
+                        data-contact-type={type}
+                        onClick={() => setContactType(type)}
+                        onKeyDown={handleContactTypeKey}
+                      >
+                        {type === "phone"
+                          ? t.booking.contactPhone
+                          : t.booking.contactInstagram}
+                      </button>
+                    </Fragment>
                   ))}
                 </div>
                 <input type="hidden" name="contactType" value={contactType} />

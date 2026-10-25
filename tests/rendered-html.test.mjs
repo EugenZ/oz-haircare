@@ -240,7 +240,9 @@ test("wires the booking form to the pending flow and the contact toggle", async 
   assert.match(page, /name="email"/);
   assert.match(page, /name="contactType"/);
   assert.match(page, /setContactType\(type\)/);
-  assert.match(page, /aria-pressed=\{contactType === type\}/);
+  assert.match(page, /role="radiogroup"/);
+  assert.match(page, /aria-checked=\{contactType === type\}/);
+  assert.match(page, /onKeyDown=\{handleContactTypeKey\}/);
   assert.match(page, /contactType === "phone" \? "tel" : "text"/);
   assert.match(page, /t\.booking\.emailHint/);
   assert.match(page, /t\.booking\.successInstagram/);

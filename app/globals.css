@@ -233,11 +233,13 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .form-error p { color: rgba(245,241,233,.75); font-size: 13px; line-height: 1.55; margin: 0 0 8px; }
 .booking-form button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 .form-success p.booking-pending-note { color: rgba(245,241,233,.5); font-size: 12px; margin-top: 10px; }
-.contact-field { display: flex; flex-direction: column; gap: 10px; }
-.booking-form .contact-type { display: flex; gap: 6px; }
-.booking-form .contact-type button { background: transparent; border: 1px solid rgba(245,241,233,.32); border-radius: var(--radius-pill); color: rgba(245,241,233,.7); font-size: 10px; letter-spacing: .12em; margin-top: 0; padding: 6px 12px; text-transform: uppercase; transition: background .2s ease, color .2s ease; }
-.booking-form .contact-type button.is-active { background: var(--clay-light); border-color: var(--clay-light); color: var(--ink); }
-.booking-form .contact-type button:focus-visible { outline: 1px solid var(--clay-light); outline-offset: 2px; }
+.contact-field { border-bottom: 1px solid rgba(245,241,233,.32); padding-bottom: 10px; }
+.booking-form .contact-field label { border-bottom: 0; padding-bottom: 0; }
+.booking-form .contact-type { align-items: baseline; color: rgba(245,241,233,.32); display: flex; font-size: 10px; gap: 7px; letter-spacing: .12em; margin-bottom: 9px; text-transform: uppercase; }
+.booking-form .contact-type button { background: transparent; color: rgba(245,241,233,.47); font: inherit; text-decoration: underline 1px transparent; text-underline-offset: 4px; letter-spacing: inherit; line-height: inherit; margin: 0; padding: 0; text-transform: inherit; transition: color .2s ease, text-decoration-color .2s ease; }
+.booking-form .contact-type button:hover { color: rgba(245,241,233,.75); }
+.booking-form .contact-type button.is-active { text-decoration-color: var(--clay-light); color: var(--clay-light); }
+.booking-form .contact-type button:focus-visible { outline: 1px solid var(--clay-light); outline-offset: 3px; }
 .booking-form label .visually-hidden, .visually-hidden { border: 0; clip: rect(0 0 0 0); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; white-space: nowrap; width: 1px; }
 
 /* Booking pages: Olga's manage page (/booking/manage) + the client's page (/booking/view). */
