@@ -1878,7 +1878,7 @@ export default function Home() {
                   required
                 />
               </label>
-              <label>
+              <label className="span-2">
                 <span>{t.booking.email}</span>
                 <input
                   type="email"
