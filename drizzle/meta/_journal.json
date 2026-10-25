@@ -1,5 +1,12 @@
 {
-  "version": "7",
-  "dialect": "sqlite",
-  "entries": []
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792860567682,
+      "tag": "0000_chunky_slayback",
+      "breakpoints": true
+    }
+  ]
 }

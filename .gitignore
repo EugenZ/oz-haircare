@@ -38,3 +38,7 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+
+# graphify generated cache + agent tooling (regenerable, not part of the app)
+/graphify-out/
+/.codex/

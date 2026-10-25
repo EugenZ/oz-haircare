@@ -155,6 +155,8 @@ const copy = {
       time: "Время",
       pickDate: "Выберите день",
       pickTime: "Выберите время",
+      busy: "занято",
+      checkingTime: "Проверяем время…",
       name: "Ваше имя",
       namePlaceholder: "Как к вам обращаться?",
       contact: "Телефон или Instagram",
@@ -183,6 +185,14 @@ const copy = {
       successText:
         "Спасибо. Я подтвержу выбранные дату и время в ближайшее время.",
       another: "Отправить ещё одну заявку",
+      email: "Email",
+      emailPlaceholder: "you@example.com",
+      sending: "Отправляю…",
+      inviteCta: "Добавить в календарь",
+      inviteHint:
+        "Приглашение-ссылка — нажмите, чтобы добавить встречу в свой календарь.",
+      errorText: "Не удалось отправить заявку. Попробуйте ещё раз.",
+      retry: "Попробовать снова",
     },
     footer: {
       label:
@@ -298,6 +308,8 @@ const copy = {
       time: "Time",
       pickDate: "Choose a day",
       pickTime: "Choose a time",
+      busy: "busy",
+      checkingTime: "Checking times…",
       name: "Your name",
       namePlaceholder: "What should I call you?",
       contact: "Phone or Instagram",
@@ -326,6 +338,14 @@ const copy = {
       successText:
         "Thank you. I will confirm the date and time you chose shortly.",
       another: "Send another request",
+      email: "Email",
+      emailPlaceholder: "you@example.com",
+      sending: "Sending…",
+      inviteCta: "Add to calendar",
+      inviteHint:
+        "Invite link — click to add this meeting to your calendar.",
+      errorText: "We couldn't send your request. Please try again.",
+      retry: "Try again",
     },
     footer: {
       label: "Trichology · hair restoration specialist and scalp treatment",
@@ -1138,7 +1158,14 @@ export default function Home() {
   const [openService, setOpenService] = useState<string | null>(null);
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
+  const [busyFor, setBusyFor] = useState<{ date: string; slots: string[] }>({
+    date: "",
+    slots: [],
+  });
   const [aboutPhotoIndex, setAboutPhotoIndex] = useState(0);
   const [certificateIndex, setCertificateIndex] = useState(0);
   const aboutSwipeStart = useRef<number | null>(null);
@@ -1201,11 +1228,95 @@ export default function Home() {
     document.documentElement.lang = language;
   }, [language]);
 
+  // When a date is chosen, ask the server which of that day's slots are
+  // already busy on Olya's calendar and grey those out so they can't be picked.
+  // State is only written after the async response, so the effect never sets
+  // state during render (avoids react-hooks/set-state-in-effect).
+  useEffect(() => {
+    if (!selectedDate) return;
+    let cancelled = false;
+    const daySlots = availableSlots(selectedDate);
+    const params = new URLSearchParams({
+      date: selectedDate,
+      slots: daySlots.join(","),
+    });
+    fetch(`/api/bookings/availability?${params.toString()}`)
+      .then((response) =>
+        response.json().catch(() => ({ busy: [] as string[] })),
+      )
+      .then((json) => {
+        if (cancelled) return;
+        const busy = Array.isArray(json.busy) ? json.busy : [];
+        setBusyFor({
+          date: selectedDate,
+          slots: busy.filter((slot: string) => daySlots.includes(slot)),
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setBusyFor({ date: selectedDate, slots: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate]);
+
+  // Busy slots only apply to the date they were fetched for; "checking" is true
+  // until a result has arrived for the currently selected date.
+  const busySlots = busyFor.date === selectedDate ? busyFor.slots : [];
+  const slotsChecking = selectedDate !== "" && busyFor.date !== selectedDate;
+
   const closeMenu = () => setMenuOpen(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const resetBooking = () => {
+    setSubmitted(false);
+    setSelectedDate("");
+    setBusyFor({ date: "", slots: [] });
+    setSubmitError(null);
+    setInviteUrl(null);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitted(true);
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const payload = {
+      name: String(data.get("name") ?? "").trim(),
+      contact: String(data.get("contact") ?? "").trim(),
+      email: String(data.get("email") ?? "").trim(),
+      date: String(data.get("date") ?? "").trim(),
+      time: String(data.get("time") ?? "").trim(),
+      service: String(data.get("service") ?? "").trim(),
+      message: String(data.get("message") ?? "").trim(),
+      language,
+    };
+
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = (await response
+        .json()
+        .catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        calendarUrl?: string;
+      };
+      if (!response.ok || json.ok === false) {
+        throw new Error(json.error ?? `HTTP ${response.status}`);
+      }
+      setInviteUrl(
+        typeof json.calendarUrl === "string" ? json.calendarUrl : null,
+      );
+      setSubmitted(true);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -1710,18 +1821,39 @@ export default function Home() {
           </div>
         </div>
         <div className="booking-form-wrap">
-          {submitted ? (
+          {submitError ? (
+            <div className="form-error" role="alert">
+              <p>{t.booking.errorText} {submitError}</p>
+              <button
+                className="text-link text-link-light"
+                type="button"
+                onClick={resetBooking}
+              >
+                {t.booking.retry} <span>↗</span>
+              </button>
+            </div>
+          ) : submitted ? (
             <div className="form-success">
               <span className="success-mark">✓</span>
               <h3>{t.booking.successTitle}</h3>
               <p>{t.booking.successText}</p>
+              {inviteUrl ? (
+                <div className="booking-invite">
+                  <a
+                    className="button button-light"
+                    href={inviteUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t.booking.inviteCta} <span>↗</span>
+                  </a>
+                  <p className="booking-invite-hint">{t.booking.inviteHint}</p>
+                </div>
+              ) : null}
               <button
                 className="text-link text-link-light"
                 type="button"
-                onClick={() => {
-                  setSubmitted(false);
-                  setSelectedDate("");
-                }}
+                onClick={resetBooking}
               >
                 {t.booking.another} <span>↗</span>
               </button>
@@ -1744,6 +1876,14 @@ export default function Home() {
                   name="contact"
                   placeholder={t.booking.contactPlaceholder}
                   required
+                />
+              </label>
+              <label>
+                <span>{t.booking.email}</span>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder={t.booking.emailPlaceholder}
                 />
               </label>
               <label>
@@ -1771,17 +1911,23 @@ export default function Home() {
                   required
                   defaultValue=""
                   key={selectedDate}
-                  disabled={!selectedDate}
+                  disabled={!selectedDate || slotsChecking}
                 >
                   <option value="" disabled>
                     {t.booking.pickTime}
                   </option>
-                  {timeSlots.map((slot) => (
-                    <option key={slot} value={slot}>
-                      {slot}
-                    </option>
-                  ))}
+                  {timeSlots.map((slot) => {
+                    const busy = busySlots.includes(slot);
+                    return (
+                      <option key={slot} value={slot} disabled={busy}>
+                        {busy ? `${slot} · ${t.booking.busy}` : slot}
+                      </option>
+                    );
+                  })}
                 </select>
+                {selectedDate && slotsChecking ? (
+                  <small className="form-hint">{t.booking.checkingTime}</small>
+                ) : null}
               </label>
               <label className="span-2">
                 <span>{t.booking.interest}</span>
@@ -1804,8 +1950,12 @@ export default function Home() {
                   rows={3}
                 />
               </label>
-              <button className="button button-light" type="submit">
-                {t.booking.submit} <span>↗</span>
+              <button
+                className="button button-light"
+                type="submit"
+                disabled={submitting}
+              >
+                {submitting ? t.booking.sending : t.booking.submit} <span>↗</span>
               </button>
               <p className="form-privacy">{t.booking.privacy}</p>
             </form>
