@@ -25,6 +25,7 @@ export type BookingPayload = {
   name: string;
   contact: string;
   contactType?: "phone" | "instagram" | "";
+  contactNormalized?: string; // E.164 phone or bare Instagram handle
   email?: string;
   date: string; // "YYYY-MM-DD"
   time: string; // "HH:MM"
@@ -47,6 +48,7 @@ export type EmailBackendConfig = {
   apiKey?: string;
   notifyEmail?: string; // the practice's "meeting" mailbox
   fromEmail?: string;
+  alertEmail?: string; // technical alerts (failed saves); optional
 };
 
 export type EmailAttachment = { filename: string; content: string }; // base64
@@ -220,18 +222,73 @@ function detailsTable(payload: BookingPayload): string {
 
 const footer = `<p style="color:#8a8a8a;font-size:12px;margin-top:20px">OZ SPA · Запись на встречу / booking</p>`;
 
-// Olga: a new request with the link to confirm / decline / propose.
+// One-tap ways to reach the client straight from the email.
+function directContactLinks(payload: BookingPayload): string[] {
+  const links: string[] = [];
+  const normalized = payload.contactNormalized?.trim();
+  if (payload.contactType === "phone" && normalized) {
+    links.push(link(`tel:${normalized}`, `Позвонить / Call ${normalized}`));
+    links.push(link(`sms:${normalized}`, "Написать SMS / Text"));
+  } else if (payload.contactType === "instagram" && normalized) {
+    links.push(
+      link(`https://ig.me/m/${encodeURIComponent(normalized)}`, `Написать в Instagram / Message @${normalized}`),
+    );
+  }
+  if (payload.email) links.push(link(`mailto:${payload.email}`, `Написать на email / Email ${payload.email}`));
+  return links;
+}
+
+// Olga: a new request with the link to confirm / decline / propose. Without a
+// manage link (the request could not be saved) the email is self-sufficient:
+// everything Olga needs to reach the client and block the time herself.
 export function practitionerRequestEmail(
   payload: BookingPayload,
   options: { manageUrl?: string },
 ): EmailContent {
-  const action = options.manageUrl
-    ? `<p style="margin-top:16px">${link(options.manageUrl, "Подтвердить, отклонить или предложить другое время →")}</p>
-       <p style="color:#8a8a8a;font-size:12px">Событие в календаре создаётся только после подтверждения.</p>`
-    : `<p style="margin-top:16px;color:#b3412e">База данных недоступна — заявка не сохранена. Подтвердите запись вручную и свяжитесь с клиентом.</p>`;
+  const slot = formatSlot(payload.date, payload.time, "ru");
+  if (!options.manageUrl) {
+    const actions = [
+      ...directContactLinks(payload),
+      link(buildInviteFromPayload(payload).calendarUrl, "Добавить в мой календарь / Add to my calendar"),
+    ];
+    return {
+      subject: `Новая заявка — свяжитесь с клиентом сами · ${payload.name} · ${slot}`,
+      html: `<p>Новая заявка на встречу.</p>
+<p style="color:#b3412e"><strong>Заявка пришла, но не сохранилась в системе из-за технической ошибки.</strong> Кнопки «Подтвердить» не будет, автоматическое подтверждение и SMS не сработают — свяжитесь с клиентом напрямую и, если время подходит, добавьте встречу в свой календарь.</p>
+<p style="color:#8a8a8a;font-size:12px">The request arrived but could not be saved because of a technical error. Automatic confirmation and SMS won't work — please contact the client directly and add the meeting to your calendar.</p>
+${detailsTable(payload)}
+<p style="margin-top:16px;line-height:2">${actions.join("<br>")}</p>${footer}`,
+    };
+  }
   return {
-    subject: `Новая заявка · ${payload.name} · ${formatSlot(payload.date, payload.time, "ru")}`,
-    html: `<p>Новая заявка на встречу${payload.id ? ` #${payload.id}` : ""}.</p>${detailsTable(payload)}${action}${footer}`,
+    subject: `Новая заявка · ${payload.name} · ${slot}`,
+    html: `<p>Новая заявка на встречу${payload.id ? ` #${payload.id}` : ""}.</p>${detailsTable(payload)}
+<p style="margin-top:16px">${link(options.manageUrl, "Подтвердить, отклонить или предложить другое время →")}</p>
+<p style="color:#8a8a8a;font-size:12px">Событие в календаре создаётся только после подтверждения.</p>${footer}`,
+  };
+}
+
+// Site admin (ADMIN_ALERT_EMAIL): a booking request could not be saved.
+export function adminSaveFailedEmail(
+  payload: BookingPayload,
+  failure: { kind: string; code?: string; message: string },
+): EmailContent {
+  const slot = formatSlot(payload.date, payload.time, "ru");
+  const hint =
+    failure.kind === "not_configured"
+      ? "DATABASE_URL (or PGUSER/PGHOST/PGPASSWORD) is not set for the Worker."
+      : failure.code === "42703" || failure.code === "42P01"
+        ? "The schema is behind the code: apply the pending drizzle/*.sql migrations."
+        : "See the Worker logs for [bookings] entries.";
+  return {
+    subject: `[OZ SPA] Booking not saved: ${failure.code ?? failure.kind}`,
+    html: `<p>A booking request for ${esc(slot)} could not be saved. Olga was emailed the client details to follow up by hand.</p>
+<table style="font-family:monospace">
+<tr><td style="padding:4px 12px 4px 0">kind</td><td>${esc(failure.kind)}</td></tr>
+<tr><td style="padding:4px 12px 4px 0">code</td><td>${esc(failure.code ?? "—")}</td></tr>
+<tr><td style="padding:4px 12px 4px 0">message</td><td>${esc(failure.message)}</td></tr>
+</table>
+<p>${esc(hint)}</p>${footer}`,
   };
 }
 

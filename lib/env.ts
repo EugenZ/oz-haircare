@@ -35,6 +35,7 @@ export function emailConfig(): EmailBackendConfig {
     apiKey: envValue("EMAIL_API_KEY"),
     notifyEmail: envValue("BOOKING_NOTIFY_EMAIL") ?? envValue("OLGA_EMAIL"),
     fromEmail: envValue("EMAIL_FROM"),
+    alertEmail: envValue("ADMIN_ALERT_EMAIL"),
   };
 }
 

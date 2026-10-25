@@ -21,6 +21,7 @@ import {
   type OutboxChannel,
 } from "@/db/schema";
 import {
+  adminSaveFailedEmail,
   buildIcs,
   buildInviteFromPayload,
   clientConfirmedEmail,
@@ -36,6 +37,7 @@ import {
   type SendResult,
 } from "./email";
 import { emailConfig, envFlag, envNumber, googleConfig, siteUrl } from "./env";
+import { describeDbError, type DbFailure } from "./errors";
 import { createCalendarEvent, fetchBusySlotsForDay, type GoogleCalendarConfig } from "./google";
 import { clientMessageText, formatSlot, pickLanguage, type ClientMessageKind } from "./messages";
 import { slotStartsInPast } from "./time";
@@ -83,9 +85,9 @@ async function guarded(run: () => Promise<ActionResult>): Promise<ActionResult> 
   try {
     return await run();
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "unknown error";
-    console.warn("[bookings] action failed:", detail);
-    return fail("unavailable", detail);
+    const failure = describeDbError(error);
+    console.error("[bookings] action failed:", JSON.stringify(failure));
+    return fail("unavailable", failure.message);
   }
 }
 
@@ -208,7 +210,7 @@ export type NewBookingInput = {
 export async function createBooking(input: NewBookingInput, ctx: BookingContext) {
   const manageToken = generateToken();
   let id: number | undefined;
-  let dbError: string | undefined;
+  let dbFailure: DbFailure | undefined;
   try {
     const db = getDb();
     const [row] = await db
@@ -221,8 +223,8 @@ export async function createBooking(input: NewBookingInput, ctx: BookingContext)
       .returning({ id: bookings.id });
     id = row?.id;
   } catch (error) {
-    dbError = error instanceof Error ? error.message : "database unavailable";
-    console.warn("[bookings] could not persist to database:", dbError);
+    dbFailure = describeDbError(error);
+    console.error("[bookings] could not save booking request:", JSON.stringify(dbFailure));
   }
   const persisted = id !== undefined;
 
@@ -243,8 +245,20 @@ export async function createBooking(input: NewBookingInput, ctx: BookingContext)
           ...clientReceivedEmail(payload, ctx.siteUrl || undefined),
         })
       : { attempted: false, ok: true };
+  const alert: SendResult =
+    dbFailure && ctx.email.alertEmail
+      ? await sendEmail(ctx.email, {
+          to: ctx.email.alertEmail,
+          ...adminSaveFailedEmail(payload, dbFailure),
+        })
+      : { attempted: false, ok: true };
 
-  return { id, persisted, dbError, notify: { practitioner, client } };
+  return {
+    id,
+    persisted,
+    dbError: dbFailure?.kind,
+    notify: { practitioner, client, alert },
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -268,6 +268,10 @@ test("a submitted booking emails Olga and the client but creates no calendar eve
   process.env.EMAIL_API_URL = "https://mail.example.test/emails";
   process.env.EMAIL_API_KEY = "k";
   process.env.EMAIL_FROM = "OZ SPA <booking@example.com>";
+  process.env.ADMIN_ALERT_EMAIL = "admin@example.com";
+  const errors = [];
+  const realError = console.error;
+  console.error = (...args) => errors.push(args.join(" "));
 
   let tokenHits = 0;
   let eventHits = 0;
@@ -332,21 +336,39 @@ test("a submitted booking emails Olga and the client but creates no calendar eve
     assert.equal(tokenHits, 1); // only the availability guard talks to Google
     assert.equal(availabilityHits, 1);
     assert.equal(eventHits, 0); // the event is created on Olga's confirmation
-    assert.equal(emailHits, 2); // Olga + client "request received"
+    assert.equal(emailHits, 3); // Olga + client "request received" + admin alert
     assert.equal(body.notify.practitioner.ok, true);
     assert.equal(body.notify.client.ok, true);
+    assert.equal(body.notify.alert.ok, true);
+    assert.equal(body.persisted, false);
+    assert.equal(body.dbError, "not_configured");
 
     const olga = emails.find((mail) => mail.to === "olga@example.com");
     const client = emails.find((mail) => mail.to === "client@example.com");
-    assert.match(olga.subject, /Новая заявка/);
+    const alert = emails.find((mail) => mail.to === "admin@example.com");
+    assert.match(olga.subject, /свяжитесь с клиентом сами/);
     assert.match(olga.html, /Instagram: @test\.person/);
-    // Without a database there is no manage link: Olga is told to confirm by hand.
-    assert.match(olga.html, /вручную/);
+    // Not saved: no manage link, but everything Olga needs to act by herself.
+    assert.doesNotMatch(olga.html, /booking\/manage/);
+    assert.doesNotMatch(olga.html, /[Бб]аз[аы] данных|database/i);
+    assert.match(olga.html, /не сохранилась в системе из-за технической ошибки/);
+    assert.match(olga.html, /href="https:\/\/ig\.me\/m\/test\.person"/);
+    assert.match(olga.html, /href="mailto:client@example\.com"/);
+    assert.match(olga.html, /href="https:\/\/calendar\.google\.com\/calendar\/render\?action=TEMPLATE/);
+    assert.match(olga.html, /Добавить в мой календарь/);
     assert.match(client.subject, /Request received/);
     assert.equal(client.attachments, undefined);
+    assert.match(alert.subject, /Booking not saved: not_configured/);
+    assert.match(alert.html, /DATABASE_URL/);
+    assert.ok(
+      errors.some((line) => line.includes("[bookings] could not save booking request") && line.includes("not_configured")),
+      "the save failure is logged with console.error",
+    );
   } finally {
     globalThis.fetch = realFetch;
+    console.error = realError;
     for (const key of [
+      "ADMIN_ALERT_EMAIL",
       "GOOGLE_OAUTH_CLIENT_ID",
       "GOOGLE_OAUTH_CLIENT_SECRET",
       "GOOGLE_OAUTH_REFRESH_TOKEN",
@@ -771,6 +793,52 @@ test("builds a UTC .ics invite and a Resend attachment", tsOnly, async () => {
   ]);
   assert.match(email.html, /Apple Calendar/);
   assert.match(email.html, /Google Calendar/);
+});
+
+test("summarizes database failures and builds Olga's manual follow-up email", tsOnly, async () => {
+  const { describeDbError } = await importLib("errors");
+  const { practitionerRequestEmail, adminSaveFailedEmail } = await importLib("email");
+
+  const pgError = Object.assign(new Error('column "contact_type" of relation "bookings" does not exist'), {
+    code: "42703",
+  });
+  const wrapped = new Error("Failed query: insert into bookings ...\nparams: Анна,+13105550123", {
+    cause: pgError,
+  });
+  const failure = describeDbError(wrapped);
+  assert.deepEqual(failure, {
+    kind: "query_failed",
+    code: "42703",
+    message: 'column "contact_type" of relation "bookings" does not exist',
+  });
+  assert.equal(describeDbError(new Error("No database configured. Set DATABASE_URL")).kind, "not_configured");
+  assert.doesNotMatch(describeDbError(new Error("Failed query: x\nparams: secret")).message, /secret/);
+
+  const payload = {
+    name: "Анна",
+    contact: "+1 310 555 0123",
+    contactType: "phone",
+    contactNormalized: "+13105550123",
+    date: "2026-11-02",
+    time: "10:00",
+    service: "Диагностика",
+    language: "ru",
+  };
+  const manual = practitionerRequestEmail(payload, {});
+  assert.match(manual.html, /href="tel:\+13105550123"/);
+  assert.match(manual.html, /href="sms:\+13105550123"/);
+  assert.doesNotMatch(manual.html, /mailto:/);
+  assert.match(manual.html, /dates=20261102T180000Z%2F20261102T190000Z/);
+  assert.doesNotMatch(manual.html, /[Бб]аз[аы] данных/);
+
+  const managed = practitionerRequestEmail({ ...payload, id: 7 }, { manageUrl: "https://oz.example/booking/manage?id=7&t=x" });
+  assert.match(managed.html, /booking\/manage\?id=7/);
+  assert.doesNotMatch(managed.html, /технической ошибки/);
+
+  const alert = adminSaveFailedEmail(payload, failure);
+  assert.match(alert.subject, /42703/);
+  assert.match(alert.html, /apply the pending drizzle\/\*\.sql migrations/);
+  assert.doesNotMatch(alert.html, /\+13105550123/);
 });
 
 test("hashes tokens and derives a valid Google event id", tsOnly, async () => {

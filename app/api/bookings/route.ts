@@ -117,7 +117,7 @@ export async function POST(request: Request) {
       status: "pending",
       contactType: parsed.type,
       notify: result.notify,
-      ...(result.dbError ? { dbError: "database unavailable" } : {}),
+      ...(result.dbError ? { dbError: result.dbError } : {}),
     },
     { status: 201 },
   );
