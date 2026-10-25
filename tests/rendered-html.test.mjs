@@ -302,6 +302,7 @@ test("a submitted booking emails Olga and the client but creates no calendar eve
     }
     if (u.includes("mail.example.test")) {
       emailHits += 1;
+      emails.push(JSON.parse(String(init?.body ?? "{}")));
       return new Response(JSON.stringify({ id: "mail-1" }), {
         status: 200,
         headers: { "content-type": "application/json" },
@@ -312,9 +313,10 @@ test("a submitted booking emails Olga and the client but creates no calendar eve
   try {
     const response = await postBooking({
       name: "Test Person",
-      contact: "+1 555 000 0000",
+      contactType: "instagram",
+      contact: "@test.person",
       email: "client@example.com",
-      date: "2026-11-02",
+      date: FUTURE_DATE,
       time: "10:00",
       service: "Consultation",
       message: "hello",
@@ -324,14 +326,22 @@ test("a submitted booking emails Olga and the client but creates no calendar eve
     assert.equal(response.status, 201);
     const body = await response.json();
     assert.equal(body.ok, true);
-    assert.equal(tokenHits, 2); // one for the availability list, one for the event
-    assert.equal(eventHits, 1);
+    assert.equal(body.status, "pending");
+    assert.equal(tokenHits, 1); // only the availability guard talks to Google
     assert.equal(availabilityHits, 1);
-    assert.equal(emailHits, 2); // notify (Olga) + client confirmation
-    assert.equal(body.calendarEvent.attempted, true);
-    assert.equal(body.calendarEvent.ok, true);
-    assert.equal(body.calendarEvent.eventId, "evt-123");
-    assert.match(String(body.calendarUrl), /calendar\.google\.com\/event\?eid=evt-123/);
+    assert.equal(eventHits, 0); // the event is created on Olga's confirmation
+    assert.equal(emailHits, 2); // Olga + client "request received"
+    assert.equal(body.notify.practitioner.ok, true);
+    assert.equal(body.notify.client.ok, true);
+
+    const olga = emails.find((mail) => mail.to === "olga@example.com");
+    const client = emails.find((mail) => mail.to === "client@example.com");
+    assert.match(olga.subject, /Новая заявка/);
+    assert.match(olga.html, /Instagram: @test\.person/);
+    // Without a database there is no manage link: Olga is told to confirm by hand.
+    assert.match(olga.html, /вручную/);
+    assert.match(client.subject, /Request received/);
+    assert.equal(client.attachments, undefined);
   } finally {
     globalThis.fetch = realFetch;
     for (const key of [
@@ -414,10 +424,10 @@ function mockCalendar({ busyEvents = [] } = {}) {
   };
 }
 
-// 2026-11-02 08:00–12:00 local (America/Los_Angeles) → slots 10:00 & 11:00 busy.
+// 2030-11-04 08:00–12:00 local (America/Los_Angeles, PST) → slots 10:00 & 11:00 busy.
 const busyEvent = {
-  start: { dateTime: "2026-11-02T16:00:00Z" },
-  end: { dateTime: "2026-11-02T20:00:00Z" },
+  start: { dateTime: "2030-11-04T16:00:00Z" },
+  end: { dateTime: "2030-11-04T20:00:00Z" },
   status: "confirmed",
   summary: "existing appointment",
 };
@@ -434,7 +444,7 @@ test("rejects a booking when the slot is already busy on Olya's calendar", async
       name: "Test Person",
       contact: "+1 555 000 0000",
       email: "client@example.com",
-      date: "2026-11-02",
+      date: FUTURE_DATE,
       time: "10:00",
       service: "Consultation",
       message: "hello",
@@ -470,7 +480,7 @@ test("exposes calendar availability for a chosen date", async () => {
   const mock = mockCalendar({ busyEvents: [busyEvent] });
   try {
     const response = await callApi(
-      "/api/bookings/availability?date=2026-11-02&slots=10:00,11:00,12:00",
+      `/api/bookings/availability?date=${FUTURE_DATE}&slots=10:00,11:00,12:00`,
       { method: "GET" },
     );
 
@@ -509,7 +519,7 @@ test("booking form greys out busy slots from the availability endpoint", async (
   assert.match(page, /busySlots/);
   assert.match(page, /t\.booking\.busy/);
   assert.match(page, /disabled=\{busy\}/);
-  assert.match(route, /fetchBusySlotsForDay/);
+  assert.match(route, /slotAvailability/);
   assert.match(route, /status: 409/);
   assert.match(availability, /fetchBusySlotsForDay/);
   assert.match(google, /fetchBusySlotsForDay/);
