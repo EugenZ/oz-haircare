@@ -2,11 +2,13 @@ import { sql } from "drizzle-orm";
 import {
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type { JournalArticle } from "../lib/articles";
 
 // Lifecycle of a booking request:
 //   pending   — submitted by the client, waiting for Olga
@@ -116,3 +118,11 @@ export const outbox = pgTable(
 );
 
 export type OutboxMessage = typeof outbox.$inferSelect;
+
+// One row per journal article. `document` is the article object from
+// content/journal.json; Postgres does not constrain its fields.
+export const journalArticles = pgTable("journal_articles", {
+  slug: text("slug").primaryKey(),
+  position: integer("position").notNull(),
+  document: jsonb("document").$type<JournalArticle>().notNull(),
+});

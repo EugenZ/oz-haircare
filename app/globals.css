@@ -26,6 +26,7 @@ img { display: block; max-width: 100%; }
 
 .section-pad { padding: 104px 6vw; }
 .site-header { align-items: center; display: flex; justify-content: space-between; padding: 22px 6vw; position: absolute; top: 0; width: 100%; z-index: 10; }
+.site-header.site-header--flow { position: relative; top: auto; z-index: 1; }
 .brand { align-items: center; display: inline-flex; }
 .brand-logo { display: block; height: 86px; width: auto; }
 .main-nav { align-items: center; display: flex; gap: 32px; }
@@ -189,9 +190,15 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .gallery-image-wide { object-position: center 45%; }
 .gallery-item figcaption { bottom: 12px; color: white; font-size: 10px; left: 14px; letter-spacing: .08em; position: absolute; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
 
-.journal-heading { align-items: end; display: flex; justify-content: space-between; }
-.articles-grid { display: grid; gap: 18px; grid-template-columns: repeat(3, 1fr); margin-top: 63px; }
-.article-card { border-top: 1px solid var(--line); display: flex; flex-direction: column; min-height: 310px; padding: 20px 3px 0; }
+.journal-heading { align-items: end; display: flex; justify-content: space-between; gap: 24px; }
+.journal-heading-actions { align-items: center; display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 22px 28px; justify-content: flex-end; }
+.journal-nav { display: flex; flex-shrink: 0; gap: 14px; }
+.journal-nav-btn:disabled { cursor: default; opacity: .32; pointer-events: none; }
+.journal-nav-btn:disabled:hover { background: transparent; border-color: var(--line); color: var(--ink); }
+.journal-carousel { margin-top: 63px; max-width: 100%; overflow-x: clip; }
+.articles-grid { display: flex; gap: 18px; margin: 0; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.articles-grid::-webkit-scrollbar { display: none; }
+.article-card { border-top: 1px solid var(--line); display: flex; flex: 0 0 calc((100% - 36px) / 3); flex-direction: column; min-height: 310px; min-width: 0; padding: 20px 3px 0; scroll-snap-align: start; }
 .article-number { color: var(--clay); font-family: var(--display); font-size: 21px; font-style: italic; }
 .article-meta { display: flex; font-size: 10px; justify-content: space-between; letter-spacing: .1em; margin-top: 30px; text-transform: uppercase; }
 .article-meta span:first-child { color: var(--clay); }
@@ -244,8 +251,7 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 
 /* Booking pages: Olga's manage page (/booking/manage) + the client's page (/booking/view). */
 .booking-page { background: var(--cream); min-height: 100vh; padding: 28px 6vw 80px; }
-.booking-page-header { margin-bottom: 36px; }
-.booking-page-header .brand-logo { height: 64px; }
+.booking-page-header { margin-bottom: 36px; padding-top: 22px; }
 .booking-card { background: var(--paper); border: 1px solid var(--line); margin: 0 auto; max-width: 640px; padding: 40px; }
 .booking-card h1 { font-size: clamp(36px, 5vw, 56px); margin-bottom: 20px; }
 .booking-card > p:not(.eyebrow) { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
@@ -268,6 +274,54 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .booking-propose input, .booking-propose select { background: transparent; border: 0; color: var(--ink); font-size: 14px; outline: 0; padding: 3px 0; width: 100%; }
 .booking-links { margin-top: 20px; }
 
+/* Journal article reading page + draft helper (cream matches home hero / main surface) */
+.article-page { background: var(--cream); min-height: 100vh; }
+.article-page-content { padding: 0 6vw 72px; }
+.article-page-tools { align-items: center; display: flex; gap: 10px; margin-left: 27px; }
+.article-lang { border-bottom: 1px solid transparent; color: var(--ink-soft); font-size: 11px; letter-spacing: .14em; padding-bottom: 4px; text-transform: uppercase; }
+.article-lang.is-active, .article-lang[aria-current="page"] { border-bottom-color: var(--ink); color: var(--ink); }
+.article-read { margin: 0 auto; max-width: 42rem; }
+.article-read h1 { font-family: var(--display); font-size: clamp(36px, 5.5vw, 56px); font-weight: 400; letter-spacing: -.04em; line-height: 1.02; margin: 18px 0 22px; }
+.article-byline { color: var(--ink-soft); font-size: 13px; letter-spacing: .02em; line-height: 1.5; margin: 0 0 36px; }
+.article-body p { color: var(--ink); font-size: 17px; letter-spacing: -.01em; line-height: 1.72; margin: 0 0 1.35em; max-width: 38rem; }
+.article-body p:last-child { margin-bottom: 0; }
+.article-back { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 28px; }
+.journal-admin-lead { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0 0 28px; max-width: 38rem; }
+.journal-admin-lead code { font-family: var(--font-mono, ui-monospace, monospace); font-size: .92em; }
+.journal-admin-grid { display: grid; gap: 18px; }
+.journal-admin-grid label span { color: var(--ink-soft); display: block; font-size: 10px; letter-spacing: .12em; margin-bottom: 8px; text-transform: uppercase; }
+.journal-admin-pair { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.journal-admin-grid input, .journal-admin-grid textarea { background: var(--cream); border: 1px solid var(--line); color: var(--ink); font-size: 14px; line-height: 1.5; padding: 10px 12px; width: 100%; }
+.journal-admin-grid textarea { resize: vertical; min-height: 88px; }
+.journal-admin-key { display: grid; gap: 12px; margin: 0 0 8px; max-width: 28rem; }
+.journal-admin-key label { display: block; }
+.journal-admin-key span { color: var(--ink-soft); display: block; font-size: 10px; letter-spacing: .12em; margin-bottom: 8px; text-transform: uppercase; }
+.journal-admin-key input { background: var(--cream); border: 1px solid var(--line); color: var(--ink); font-size: 14px; padding: 10px 12px; width: 100%; }
+.journal-admin-key .button { justify-self: start; }
+.journal-admin-list { border-top: 1px solid var(--line); display: grid; list-style: none; margin: 28px 0 8px; padding: 0; }
+.journal-admin-row { align-items: center; border-bottom: 1px solid var(--line); display: flex; gap: 16px; justify-content: space-between; padding: 14px 0; }
+.journal-admin-list.is-sorting, .journal-admin-list.is-sorting button { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.journal-admin-row.is-dragging { opacity: .55; }
+.journal-admin-row p { flex: 1; font-size: 15px; margin: 0; min-width: 0; }
+.journal-admin-grip { background: transparent; color: var(--ink-soft); cursor: grab; display: grid; flex-shrink: 0; gap: 3px; padding: 8px 2px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.journal-admin-grip span { background: currentColor; display: block; height: 1px; width: 14px; }
+.journal-admin-grip:active, .journal-admin-row.is-dragging .journal-admin-grip { cursor: grabbing; }
+.journal-admin-grip:disabled { cursor: default; opacity: .45; }
+.journal-admin-save-order { margin: 8px 0 20px; }
+.journal-admin-save-order .button:disabled { cursor: default; opacity: .45; transform: none; }
+.journal-admin-row small { color: var(--ink-soft); display: block; font-size: 11px; letter-spacing: .06em; margin-top: 4px; }
+.journal-admin-delete { background: transparent; border: 1px solid var(--line); color: var(--ink); flex-shrink: 0; font-size: 11px; letter-spacing: .08em; padding: 10px 14px; text-transform: uppercase; }
+.journal-admin-delete:hover { border-color: var(--clay); color: var(--clay); }
+.journal-admin-delete:disabled { cursor: default; opacity: .45; }
+.journal-admin-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.journal-admin-status { color: var(--ink-soft); font-size: 13px; line-height: 1.55; margin-top: 18px; max-width: 38rem; }
+
+@media (max-width: 650px) {
+  .article-page-tools { margin-left: auto; order: 2; }
+  .journal-admin-pair { grid-template-columns: 1fr; }
+  .article-page-content { padding-bottom: 56px; }
+}
+
 .site-footer { align-items: center; background: var(--cream); display: grid; gap: 20px; grid-template-columns: 1.4fr 1fr .7fr .8fr; padding-bottom: 28px; padding-top: 28px; }
 .site-footer .brand-logo { height: 72px; }
 .site-footer > p, .footer-note { color: var(--ink-soft); font-size: 11px; line-height: 1.5; margin: 0; }
@@ -277,6 +331,7 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 @media (max-width: 900px) {
   .section-pad { padding-left: 7vw; padding-right: 7vw; }
   .site-header { padding-left: 7vw; padding-right: 7vw; }
+  .article-page-content { padding-left: 7vw; padding-right: 7vw; }
   .hero { grid-template-columns: 1fr; min-height: auto; padding-top: 150px; }
   .hero-copy { max-width: 760px; }
   .hero-visual { min-height: 590px; margin-top: 40px; }
@@ -291,6 +346,7 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .instagram-strip { grid-template-columns: 1fr 1fr; }
   .instagram-strip .button { justify-self: start; }
   .gallery-grid { grid-template-rows: 220px 220px; }
+  .article-card { flex-basis: calc((100% - 18px) / 2); }
   .booking { gap: 50px; grid-template-columns: 1fr 1fr; }
   .site-footer { grid-template-columns: 1fr 1fr; }
   .footer-instagram, .footer-note { justify-self: start; }
@@ -358,8 +414,11 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .gallery-grid { display: grid; gap: 12px; grid-template-columns: 1fr; grid-template-rows: auto; margin-top: 42px; }
   .gallery-item { aspect-ratio: 3 / 2; }
   .gallery-item-1, .gallery-item-2, .gallery-item-3, .gallery-item-4 { grid-column: auto; grid-row: auto; }
-  .articles-grid { grid-template-columns: 1fr; margin-top: 42px; }
-  .article-card { min-height: 260px; }
+  .journal-carousel { margin-top: 42px; }
+  .journal-heading-actions { align-items: flex-start; flex-direction: column; width: 100%; }
+  .journal-nav { justify-content: flex-start; width: 100%; }
+  .articles-grid { scroll-padding-inline: 0; }
+  .article-card { flex-basis: calc(100% - 48px); max-width: 320px; min-height: 260px; }
   .booking { display: block; }
   .booking-heading { margin-bottom: 50px; }
   .booking-details { flex-direction: column; gap: 10px; margin-top: 35px; }

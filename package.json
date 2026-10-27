@@ -13,7 +13,9 @@
     "test:db": "npm run build && TEST_DB_USE_DATABASE_URL=1 node --env-file-if-exists=.env.local --test --test-force-exit tests/db-integration.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "journal:new": "node scripts/journal-new.mjs",
+    "journal:import": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs migrate && node --env-file-if-exists=.env.local scripts/journal-import.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

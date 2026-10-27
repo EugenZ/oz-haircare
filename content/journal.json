@@ -1,0 +1,290 @@
+{
+  "articles": [
+    {
+      "slug": "why-hair-loses-freshness",
+      "tag": {
+        "ru": "База",
+        "en": "Basics"
+      },
+      "title": {
+        "ru": "Почему волосы быстро теряют свежесть",
+        "en": "Why hair loses freshness so quickly"
+      },
+      "text": {
+        "ru": "О коже головы, частоте мытья и сигналах, которые не стоит игнорировать.",
+        "en": "About the scalp, wash frequency, and signals worth paying attention to."
+      },
+      "time": {
+        "ru": "5 минут чтения",
+        "en": "5 min read"
+      },
+      "byline": {
+        "ru": "Ольга · трихолог OZ SPA",
+        "en": "Olga · OZ SPA trichologist"
+      },
+      "body": {
+        "ru": [
+          "«Свежие» волосы — это не только аромат шампуня. Это баланс кожи головы, чистота прикорневой зоны и гладкость кутикулы по длине. Когда один из элементов сбивается, волосы быстрее кажутся тяжёлыми, жирными у корней или сухими на концах.",
+          "Частая причина — мытьё «на автомате»: одно и то же средство, одна частота, без учёта сезона и стресса. Кожа головы реагирует на жёсткую воду, укладку у корней и перегрев так же, как и на состав шампуня.",
+          "Обратите внимание на сигналы: зуд в течение дня, белесый налёт у parting, ощущение «запылённости» уже на второй день, статика по длине. Это повод не менять всё сразу, а сначала понять, что именно изменилось — режим, продукт или образ жизни.",
+          "Стабильный результат начинается с простого: мягкое очищение там, где нужно, увлажнение там, где сухо, и пауза перед новой «волшебной» банкой. Если дискомфорт не проходит две–три недели, лучше разобрать кожу головы на приёме, а не усиливать мытьё или масла наугад."
+        ],
+        "en": [
+          "“Fresh” hair is not just shampoo scent. It is scalp balance, a clean root area, and smooth cuticles along the lengths. When one piece slips, hair quickly feels heavy, oily at the roots, or dry on the ends.",
+          "A common trigger is washing on autopilot: the same product, the same frequency, without adjusting for season or stress. The scalp responds to hard water, root styling, and heat just as much as to shampoo ingredients.",
+          "Watch for signals: daytime itch, white buildup along the part, a “dusty” feeling by day two, static on the lengths. That is a reason not to change everything at once, but to see what actually shifted — routine, product, or lifestyle.",
+          "A steady result starts simply: cleanse gently where needed, hydrate where it is dry, and pause before the next “miracle” bottle. If discomfort lasts two to three weeks, it is better to assess the scalp in a visit than to wash more or layer oils at random."
+        ]
+      }
+    },
+    {
+      "slug": "how-to-read-shampoo-label",
+      "tag": {
+        "ru": "Уход",
+        "en": "Care"
+      },
+      "title": {
+        "ru": "Как читать состав шампуня",
+        "en": "How to read a shampoo label"
+      },
+      "text": {
+        "ru": "Небольшая памятка: на что смотреть, если кожа головы чувствительная, а длина сухая.",
+        "en": "A small guide to what matters when the scalp is sensitive and the lengths are dry."
+      },
+      "time": {
+        "ru": "7 минут чтения",
+        "en": "7 min read"
+      },
+      "byline": {
+        "ru": "Ольга · трихолог OZ SPA",
+        "en": "Olga · OZ SPA trichologist"
+      },
+      "body": {
+        "ru": [
+          "Состав читают сверху вниз: первые пять–семь позиций задают ощущение после мытья. Для чувствительной кожи головы важны мягкие ПАВ и отсутствие агрессивного отдушивания, которое маскируется под «парфюм» в списке INCI.",
+          "Если длина сухая, обращайте внимание на силиконы и поликватерниумы: они могут сглаживать, но при ежедневном нанесении у корней иногда усиливают ощущение «плёнки». Это не «плохо» само по себе — вопрос в зоне нанесения и частоте.",
+          "Сульфаты, кокосовые производные, аминокислотные ПАВ — названия пугают, но решает концентрация и формула целиком. Два шампуня с похожими словами на этикетке могут вести себя по-разному.",
+          "Практичный подход: один шампунь для кожи головы (лёгкий, без тяжёлых масел в топе), отдельный уход для длины после мытья. Так проще читать реакцию и не смешивать задачи в одном флаконе."
+        ],
+        "en": [
+          "Read ingredients top to bottom: the first five to seven lines define how hair feels after washing. For a sensitive scalp, mild surfactants matter, and heavy fragrance masking as “parfum” on the INCI list is worth noticing.",
+          "If lengths are dry, watch silicones and polyquaterniums: they can smooth, but when applied near the roots daily they sometimes increase a “film” feeling. That is not automatically bad — it depends on where and how often you use them.",
+          "Sulfates, coconut-derived cleansers, amino-acid surfactants — the names sound scary, but concentration and the full formula decide the outcome. Two shampoos with similar words on the label can behave very differently.",
+          "A practical split: one shampoo for the scalp (light, without heavy oils high on the list), separate care for lengths after washing. That makes it easier to read the response and not mix jobs in one bottle."
+        ]
+      }
+    },
+    {
+      "slug": "restoration-more-than-mask",
+      "tag": {
+        "ru": "Длина",
+        "en": "Lengths"
+      },
+      "title": {
+        "ru": "Восстановление — не только маска",
+        "en": "Restoration is more than a mask"
+      },
+      "text": {
+        "ru": "Разбираем, из чего складывается устойчивый результат и почему ему нужен план.",
+        "en": "What creates a lasting result, and why it needs a plan."
+      },
+      "time": {
+        "ru": "6 минут чтения",
+        "en": "6 min read"
+      },
+      "byline": {
+        "ru": "Ольга · трихолог OZ SPA",
+        "en": "Olga · OZ SPA trichologist"
+      },
+      "body": {
+        "ru": [
+          "Маска даёт тактильный эффект быстро — и это нормально. Но восстановление длины — это последовательность: защита при расчёсывании, термозащита, регулярное увлажнение и иногда более глубокие процедуры в кабинете.",
+          "Без плана маска становится «раз в неделю по настроению», а остальные дни длина снова теряет влагу и ломается у плеч. План не обязан быть сложным: два–три шага, которые вы реально делаете.",
+          "В кабинете мы смотрим, где рвётся кутикула, насколько эластична прядь и как ведёт себя волос у корня. Домашний протокол подстраивается под это, а не копируется из общего списка «топ-10 масок».",
+          "Placeholder: полный текст этой статьи будет расширен, когда появятся финальные материалы для журнала. Пока используйте её как каркас для проверки страницы и навигации с главной."
+        ],
+        "en": [
+          "A mask delivers tactile results quickly — and that is fine. But restoring lengths is a sequence: protection when brushing, heat protection, regular hydration, and sometimes deeper in-studio treatments.",
+          "Without a plan, a mask becomes “once a week when I feel like it,” while the rest of the week lengths lose moisture and break around the shoulders. The plan does not have to be complex: two or three steps you actually follow.",
+          "In the studio we look at where the cuticle fails, how elastic the strand is, and how the fiber behaves at the root. Home care follows that, instead of copying a generic “top 10 masks” list.",
+          "Placeholder: this article will expand when final journal copy is ready. For now, use it to test the reading page and links from the home carousel."
+        ]
+      }
+    },
+    {
+      "slug": "itch-and-flaking",
+      "tag": {
+        "ru": "Кожа головы",
+        "en": "Scalp"
+      },
+      "title": {
+        "ru": "Зуд и шелушение: с чего начать",
+        "en": "Itch and flaking: where to start"
+      },
+      "text": {
+        "ru": "Placeholder: как отличить сухость от раздражения и когда нужна диагностика, а не новый шампунь.",
+        "en": "Placeholder: telling dryness from irritation — and when you need a diagnosis, not another shampoo."
+      },
+      "time": {
+        "ru": "4 минуты чтения",
+        "en": "4 min read"
+      },
+      "byline": {
+        "ru": "Ольга · трихолог OZ SPA",
+        "en": "Olga · OZ SPA trichologist"
+      },
+      "body": {
+        "ru": [
+          "Placeholder: сухое шелушение часто мелкое и «пудровое», усиливается после горячей воды и зимой. Раздражение может сопровождаться жжением сразу после мытья или покраснением у parting.",
+          "Placeholder: если вы меняли три шампуня за две недели, кожа головы не успевает стабилизироваться — лучше вернуться к одному мягкому средству и наблюдать 10–14 дней.",
+          "Placeholder: стойкий зуд, корочки, кровоточивость или резкое выпадение — повод записаться на очный осмотр, а не искать «лечебный» шампунь без диагностики."
+        ],
+        "en": [
+          "Placeholder: dry flaking is often fine and powdery, worse after hot water and in winter. Irritation may burn right after washing or show redness along the part.",
+          "Placeholder: if you switched three shampoos in two weeks, the scalp cannot stabilize — return to one gentle product and observe for 10–14 days.",
+          "Placeholder: persistent itch, crusting, bleeding, or sudden shedding means book an in-person visit rather than hunting for a “medical” shampoo without assessment."
+        ]
+      }
+    },
+    {
+      "slug": "minimal-everyday-hair-kit",
+      "tag": {
+        "ru": "Дом",
+        "en": "At home"
+      },
+      "title": {
+        "ru": "Минимальный набор для ежедневного ухода",
+        "en": "A minimal everyday hair kit"
+      },
+      "text": {
+        "ru": "Placeholder: три продукта, которые реально используются — без перегруза полки и бюджета.",
+        "en": "Placeholder: three products you will actually use — without overfilling the shelf or the budget."
+      },
+      "time": {
+        "ru": "5 минут чтения",
+        "en": "5 min read"
+      },
+      "byline": {
+        "ru": "Ольга · трихолог OZ SPA",
+        "en": "Olga · OZ SPA trichologist"
+      },
+      "body": {
+        "ru": [
+          "Placeholder: шампунь под вашу кожу головы, кондиционер или лёгкий уход только по длине, средство для расчёсывания или масло на кончики — если они сухие.",
+          "Placeholder: всё остальное — опционально. Добавляйте шаг, когда предыдущий стал привычкой, а не когда «купила на распродаже».",
+          "Placeholder: на приёме мы часто упрощаем полку клиента: меньше продуктов — проще понять, что работает."
+        ],
+        "en": [
+          "Placeholder: shampoo matched to your scalp, conditioner or light care on lengths only, a detangler or oil on ends if they are dry.",
+          "Placeholder: everything else is optional. Add a step when the previous one is habit, not when something was on sale.",
+          "Placeholder: in visits we often simplify a client’s shelf: fewer products make it easier to see what works."
+        ]
+      }
+    },
+    {
+      "slug": "heat-and-styling",
+      "tag": {
+        "ru": "Стиль",
+        "en": "Styling"
+      },
+      "title": {
+        "ru": "Тепло и укладка без вреда для длины",
+        "en": "Heat and styling with less damage"
+      },
+      "text": {
+        "ru": "Placeholder: температура, защита и паузы между процедурами — короткий чек-лист перед феном.",
+        "en": "Placeholder: temperature, protection, and breaks between sessions — a quick pre-blow-dry checklist."
+      },
+      "time": {
+        "ru": "6 минут чтения",
+        "en": "6 min read"
+      },
+      "byline": {
+        "ru": "Ольга · трихолог OZ SPA",
+        "en": "Olga · OZ SPA trichologist"
+      },
+      "body": {
+        "ru": [
+          "Placeholder: сначала отожмите волосы полотенцем, затем термозащита на влажные волосы, фен на средней температуре, концентратор держите на расстоянии.",
+          "Placeholder: утюжок — только на сухие пряди, одно прохождение там, где нужно, не «десять раз на одном месте».",
+          "Placeholder: день без горячей укладки в неделю заметно снижает сухость на концах у многих клиентов."
+        ],
+        "en": [
+          "Placeholder: blot with a towel first, heat protectant on damp hair, medium heat, keep the concentrator at a distance.",
+          "Placeholder: flat iron only on dry sections, one pass where needed — not ten passes on the same spot.",
+          "Placeholder: one heat-free styling day per week noticeably reduces dryness on the ends for many clients."
+        ]
+      }
+    },
+    {
+      "slug": "hair-in-winter",
+      "tag": {
+        "ru": "Сезон",
+        "en": "Season"
+      },
+      "title": {
+        "ru": "Волосы зимой: сухой воздух и шапка",
+        "en": "Hair in winter: dry air and hats"
+      },
+      "text": {
+        "ru": "Placeholder: почему статика и ломкость усиливаются и что меняют в домашнем протоколе.",
+        "en": "Placeholder: why static and breakage spike — and what to adjust in your at-home routine."
+      },
+      "time": {
+        "ru": "5 минут чтения",
+        "en": "5 min read"
+      },
+      "byline": {
+        "ru": "Ольга · трихолог OZ SPA",
+        "en": "Olga · OZ SPA trichologist"
+      },
+      "body": {
+        "ru": [
+          "Placeholder: отопление и холод на улице сушат и кожу головы, и длину. Шапка создаёт трение у затылка — отсюда заломы и пушение.",
+          "Placeholder: чуть более плотный, но лёгкий уход по длине, шёлковая наволочка или подкладка под шапку помогают без тяжёлых масел у корней.",
+          "Placeholder: не увеличивайте мытьё «из-за шапки» — чаще достаточно освежить прикорневую зону или сменить подушечный уход."
+        ],
+        "en": [
+          "Placeholder: indoor heat and cold outdoors dry both scalp and lengths. Hats create friction at the nape — creasing and frizz follow.",
+          "Placeholder: slightly richer but light care on lengths, a silk pillowcase or lining under the hat help without heavy oils at the roots.",
+          "Placeholder: do not wash more “because of the hat” — often refreshing the root area or adjusting pillow care is enough."
+        ]
+      }
+    },
+    {
+      "slug": "washing-less-oily-hair-myth",
+      "tag": {
+        "ru": "Мифы",
+        "en": "Myths"
+      },
+      "title": {
+        "ru": "«Редкое мытьё лечит жирность» — правда?",
+        "en": "“Washing less fixes oily hair” — true?"
+      },
+      "text": {
+        "ru": "Placeholder: разбираем популярный совет и что обычно происходит с кожей головы на практике.",
+        "en": "Placeholder: a popular tip unpacked — and what usually happens to the scalp in real life."
+      },
+      "time": {
+        "ru": "8 минут чтения",
+        "en": "8 min read"
+      },
+      "byline": {
+        "ru": "Ольга · трихолог OZ SPA",
+        "en": "Olga · OZ SPA trichologist"
+      },
+      "body": {
+        "ru": [
+          "Placeholder: кожа головы не «привыкает» к грязи. При редком мытьё sebum и продукты укладки накапливаются, микробиом и комфорт могут ухудшаться, а не «балансироваться сами».",
+          "Placeholder: иногда мытьё реже помогает, если вы агрессивно смывали кожу и пересушивали её — но это не универсальный совет.",
+          "Placeholder: жирность у корней лучше разбирать с трихологом: тип кожи, гормональный фон, продукты и техника мытья важнее мифа «терпеть две недели»."
+        ],
+        "en": [
+          "Placeholder: the scalp does not “get used to” dirt. With rare washing, sebum and styling buildup accumulate; comfort and balance often worsen rather than fixing themselves.",
+          "Placeholder: washing less sometimes helps if you were aggressively stripping and drying the skin — but that is not universal advice.",
+          "Placeholder: oily roots are better unpacked with a trichologist: skin type, hormones, products, and washing technique matter more than “tough it out for two weeks.”"
+        ]
+      }
+    }
+  ]
+}

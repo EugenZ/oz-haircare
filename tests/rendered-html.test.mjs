@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import { registerHooks } from "node:module";
@@ -36,13 +39,13 @@ const importLib = (name) => import(new URL(`../lib/${name}.ts`, import.meta.url)
 const projectRoot = new URL("../", import.meta.url);
 const designSystemRoot = new URL("../opendesign/root-ritual/", import.meta.url);
 
-async function render() {
+async function render(pathname = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", {
+    new Request(`http://localhost${pathname}`, {
       headers: { accept: "text/html" },
     }),
     {
@@ -89,6 +92,7 @@ test("server-renders the bilingual ROOT / RITUAL site", async () => {
   assert.match(html, /<html lang="ru">/i);
   assert.match(html, /<title>OZ SPA/);
   assert.match(html, /class="language-switch"/);
+  assert.doesNotMatch(html, /Все материалы|All articles/);
   assert.match(html, />RU<\/button>/);
   assert.match(html, />EN<\/button>/);
   assert.match(html, /id="services"/);
@@ -101,9 +105,38 @@ test("server-renders the bilingual ROOT / RITUAL site", async () => {
   assert.match(html, /service-subitem-head/);
 });
 
+test("renders a full journal article page from content/journal.json", async () => {
+  const response = await render("/journal/why-hair-loses-freshness");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Почему волосы быстро теряют свежесть/);
+  assert.match(html, /class="article-read"/);
+  assert.match(html, /class="article-body"/);
+  assert.match(html, /К журналу/);
+  assert.doesNotMatch(html, /Все материалы|article-page-footer/);
+  assert.match(html, /Ольга · трихолог OZ SPA/);
+});
+
+test("renders home and journal from the bundled catalog when neither the database nor the file is readable", async () => {
+  const restore = withEnv({
+    JOURNAL_CATALOG_PATH: join(tmpdir(), "oz-journal-missing", "journal.json"),
+  });
+  try {
+    const home = await render("/");
+    assert.equal(home.status, 200);
+    assert.match(await home.text(), /\/journal\/why-hair-loses-freshness/);
+
+    const article = await render("/journal/why-hair-loses-freshness");
+    assert.equal(article.status, 200);
+    assert.match(await article.text(), /Почему волосы быстро теряют свежесть/);
+  } finally {
+    restore();
+  }
+});
+
 test("keeps core client interactions wired", async () => {
   const [page, css] = await Promise.all([
-    readFile(new URL("app/page.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/home-client.tsx", projectRoot), "utf8"),
     readFile(new URL("app/globals.css", projectRoot), "utf8"),
   ]);
 
@@ -116,6 +149,12 @@ test("keeps core client interactions wired", async () => {
   assert.match(page, /setAboutPhotoIndex/);
   assert.match(page, /Мои дипломы и сертификаты/);
   assert.match(page, /setCertificateIndex/);
+  assert.match(page, /articlesGridRef/);
+  assert.match(page, /scrollJournal/);
+  assert.match(page, /journal-nav/);
+  assert.match(page, /\/journal\/" \+ article\.slug/);
+  assert.match(page, /from "@\/lib\/articles"/);
+  assert.match(page, /SiteBrand/);
   assert.match(page, /aria-expanded/);
   assert.match(page, /event\.preventDefault\(\)/);
   assert.match(page, /name="date"/);
@@ -127,6 +166,9 @@ test("keeps core client interactions wired", async () => {
   assert.match(page, /service-subitems/);
   assert.match(page, /extraServices\.map/);
   assert.match(page, /Выбрать время и дату/);
+  assert.match(css, /\.journal-carousel/);
+  assert.match(css, /\.articles-grid/);
+  assert.match(css, /scroll-snap-type: x mandatory/);
   assert.match(css, /@media \(max-width: 650px\)/);
   assert.match(css, /@import "\.\.\/opendesign\/root-ritual\/tokens\.css"/);
 });
@@ -230,7 +272,7 @@ test("rejects an incomplete booking request", async () => {
 
 test("wires the booking form to the pending flow and the contact toggle", async () => {
   const [page, route, bookingsLib, email] = await Promise.all([
-    readFile(new URL("app/page.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/home-client.tsx", projectRoot), "utf8"),
     readFile(new URL("app/api/bookings/route.ts", projectRoot), "utf8"),
     readFile(new URL("lib/bookings.ts", projectRoot), "utf8"),
     readFile(new URL("lib/email.ts", projectRoot), "utf8"),
@@ -530,7 +572,7 @@ test("exposes calendar availability for a chosen date", async () => {
 
 test("booking form greys out busy slots from the availability endpoint", async () => {
   const [page, route, availability, google] = await Promise.all([
-    readFile(new URL("app/page.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/home-client.tsx", projectRoot), "utf8"),
     readFile(new URL("app/api/bookings/route.ts", projectRoot), "utf8"),
     readFile(
       new URL("app/api/bookings/availability/route.ts", projectRoot),
@@ -585,6 +627,129 @@ test("protects the bookings inbox with ADMIN_API_TOKEN", async () => {
     assert.ok(Array.isArray((await right.json()).bookings));
   } finally {
     restore();
+  }
+});
+
+test("journal admin key creates, reorders, and deletes entries", async () => {
+  const dashboard = readFileSync(
+    new URL("../app/journal/admin/journal-admin-dashboard.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(dashboard, /onPointerDown/);
+  assert.match(dashboard, /Save this order\./);
+  const realCatalog = readFileSync(new URL("../content/journal.json", import.meta.url));
+  const sample = {
+    slug: "temp-admin-article",
+    tag: { ru: "Черновик", en: "Draft" },
+    title: { ru: "Временная статья", en: "Temporary article" },
+    text: { ru: "Коротко.", en: "Short." },
+    time: { ru: "4 минуты чтения", en: "4 min read" },
+    body: { ru: ["Абзац."], en: ["Paragraph."] },
+  };
+  const dir = mkdtempSync(join(tmpdir(), "oz-journal-"));
+  const catalogPath = join(dir, "journal.json");
+  writeFileSync(
+    catalogPath,
+    JSON.stringify({
+      articles: [
+        { ...sample, slug: "keep-me" },
+        { ...sample, slug: "drop-me" },
+      ],
+    }),
+  );
+  const restore = withEnv({
+    ADMIN_API_TOKEN: "admin-secret",
+    JOURNAL_CATALOG_PATH: catalogPath,
+  });
+  const jsonHeaders = {
+    "content-type": "application/json",
+    authorization: "Bearer admin-secret",
+  };
+  const slugs = () => {
+    const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
+    return catalog.articles.map((entry) => entry.slug);
+  };
+  try {
+    const unlockMissing = await callApi("/api/journal", { method: "GET" });
+    assert.equal(unlockMissing.status, 401);
+
+    const unlockWrong = await callApi("/api/journal", {
+      method: "GET",
+      headers: { authorization: "Bearer nope" },
+    });
+    assert.equal(unlockWrong.status, 401);
+
+    const unlock = await callApi("/api/journal", {
+      method: "GET",
+      headers: { authorization: "Bearer admin-secret" },
+    });
+    assert.equal(unlock.status, 200);
+    assert.equal((await unlock.json()).ok, true);
+
+    const missing = await callApi("/api/journal", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug: "drop-me" }),
+    });
+    assert.equal(missing.status, 401);
+
+    const wrong = await callApi("/api/journal", {
+      method: "DELETE",
+      headers: { ...jsonHeaders, authorization: "Bearer nope" },
+      body: JSON.stringify({ slug: "drop-me" }),
+    });
+    assert.equal(wrong.status, 401);
+
+    const removed = await callApi("/api/journal", {
+      method: "DELETE",
+      headers: jsonHeaders,
+      body: JSON.stringify({ slug: "drop-me" }),
+    });
+    assert.equal(removed.status, 200);
+    assert.deepEqual(slugs(), ["keep-me"]);
+
+    const created = await callApi("/api/journal", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(sample),
+    });
+    assert.equal(created.status, 201);
+    assert.deepEqual(slugs(), ["keep-me", "temp-admin-article"]);
+
+    const duplicate = await callApi("/api/journal", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(sample),
+    });
+    assert.equal(duplicate.status, 409);
+
+    const reorderMissing = await callApi("/api/journal", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slugs: ["temp-admin-article", "keep-me"] }),
+    });
+    assert.equal(reorderMissing.status, 401);
+
+    const reorderInvalid = await callApi("/api/journal", {
+      method: "PUT",
+      headers: jsonHeaders,
+      body: JSON.stringify({ slugs: ["keep-me"] }),
+    });
+    assert.equal(reorderInvalid.status, 400);
+    assert.deepEqual(slugs(), ["keep-me", "temp-admin-article"]);
+
+    const reordered = await callApi("/api/journal", {
+      method: "PUT",
+      headers: jsonHeaders,
+      body: JSON.stringify({ slugs: ["temp-admin-article", "keep-me"] }),
+    });
+    assert.equal(reordered.status, 200);
+    assert.equal((await reordered.json()).ok, true);
+    assert.deepEqual(slugs(), ["temp-admin-article", "keep-me"]);
+  } finally {
+    restore();
+    rmSync(dir, { recursive: true, force: true });
+    assert.equal(readFileSync(new URL("../content/journal.json", import.meta.url)).equals(realCatalog), true);
   }
 });
 
@@ -709,10 +874,15 @@ test("schema, migration and outbox enforce the booking invariants", async () => 
     readFile(new URL("drizzle/meta/_journal.json", projectRoot), "utf8"),
   ]);
   const migrations = JSON.parse(journal).entries.map((entry) => entry.tag);
-  const latest = await readFile(
-    new URL(`drizzle/${migrations.at(-1)}.sql`, projectRoot),
-    "utf8",
-  );
+  const bookingMigration = (
+    await Promise.all(
+      migrations.map(async (tag) => {
+        const sqlText = await readFile(new URL(`drizzle/${tag}.sql`, projectRoot), "utf8");
+        return sqlText.includes('CREATE TABLE "outbox"') ? sqlText : "";
+      }),
+    )
+  ).find(Boolean);
+  const latest = bookingMigration ?? "";
 
   assert.match(schema, /bookings_confirmed_slot_idx/);
   assert.match(schema, /\$\{table\.status\} = 'confirmed'/);
