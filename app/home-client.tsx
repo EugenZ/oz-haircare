@@ -141,7 +141,6 @@ const copy = {
       label: "Журнал о волосах",
       title: "Полезное, которое хочется",
       titleEm: "сохранить.",
-      all: "Все материалы",
       read: "Читать статью",
       prevArticle: "Предыдущая статья",
       nextArticle: "Следующая статья",
@@ -303,7 +302,6 @@ const copy = {
       label: "The hair journal",
       title: "Useful things worth",
       titleEm: "saving.",
-      all: "All articles",
       read: "Read article",
       prevArticle: "Previous article",
       nextArticle: "Next article",
@@ -1791,9 +1789,6 @@ export default function Home({ articles }: { articles: JournalArticle[] }) {
             </h2>
           </div>
           <div className="journal-heading-actions">
-            <a className="text-link" href="#journal">
-              {t.journal.all} <span>↗</span>
-            </a>
             <div className="journal-nav">
               <button
                 type="button"

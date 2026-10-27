@@ -286,7 +286,6 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .article-body p { color: var(--ink); font-size: 17px; letter-spacing: -.01em; line-height: 1.72; margin: 0 0 1.35em; max-width: 38rem; }
 .article-body p:last-child { margin-bottom: 0; }
 .article-back { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 28px; }
-.article-page-footer { border-top: 1px solid var(--line); margin: 56px auto 0; max-width: 42rem; padding-top: 24px; }
 .journal-admin-lead { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0 0 28px; max-width: 38rem; }
 .journal-admin-lead code { font-family: var(--font-mono, ui-monospace, monospace); font-size: .92em; }
 .journal-admin-grid { display: grid; gap: 18px; }

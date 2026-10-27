@@ -92,6 +92,7 @@ test("server-renders the bilingual ROOT / RITUAL site", async () => {
   assert.match(html, /<html lang="ru">/i);
   assert.match(html, /<title>OZ SPA/);
   assert.match(html, /class="language-switch"/);
+  assert.doesNotMatch(html, /Все материалы|All articles/);
   assert.match(html, />RU<\/button>/);
   assert.match(html, />EN<\/button>/);
   assert.match(html, /id="services"/);
@@ -111,6 +112,8 @@ test("renders a full journal article page from content/journal.json", async () =
   assert.match(html, /Почему волосы быстро теряют свежесть/);
   assert.match(html, /class="article-read"/);
   assert.match(html, /class="article-body"/);
+  assert.match(html, /К журналу/);
+  assert.doesNotMatch(html, /Все материалы|article-page-footer/);
   assert.match(html, /Ольга · трихолог OZ SPA/);
 });
 

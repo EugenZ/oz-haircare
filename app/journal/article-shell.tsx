@@ -7,12 +7,10 @@ import { journalArticlePath } from "@/lib/articles";
 const shellCopy = {
   ru: {
     home: "OZ SPA — на главную",
-    journal: "Все материалы",
     lang: "Язык",
   },
   en: {
     home: "OZ SPA — home",
-    journal: "All articles",
     lang: "Language",
   },
 } as const;
@@ -27,7 +25,6 @@ export function ArticleShell({
   children: ReactNode;
 }) {
   const t = shellCopy[lang];
-  const journalHref = lang === "en" ? "/?lang=en#journal" : "/#journal";
 
   return (
     <main className="article-page">
@@ -52,14 +49,7 @@ export function ArticleShell({
           </Link>
         </nav>
       </header>
-      <div className="article-page-content">
-        {children}
-        <footer className="article-page-footer">
-          <Link className="text-link" href={journalHref}>
-            {t.journal} <span aria-hidden="true">↗</span>
-          </Link>
-        </footer>
-      </div>
+      <div className="article-page-content">{children}</div>
     </main>
   );
 }
