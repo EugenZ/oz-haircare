@@ -144,7 +144,7 @@ describe("booking lifecycle on a real Postgres schema", { skip }, () => {
       );
       assert.deepEqual(
         tables.map((row) => row.table_name),
-        ["bookings", "outbox"],
+        ["bookings", "journal_articles", "outbox"],
       );
 
       for (const key of ["DATABASE_URL", "PGUSER", "PGHOST", "PGPASSWORD", ...Object.keys(TEST_ENV)]) {

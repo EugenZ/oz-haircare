@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import { SiteBrand } from "@/app/site-brand";
 
 // Shared frame for the booking pages (Olga's manage page and the client's
 // booking status page): logo + a single card.
@@ -7,9 +7,7 @@ export function BookingShell({ children }: { children: ReactNode }) {
   return (
     <main className="booking-page">
       <header className="booking-page-header">
-        <Link className="brand" href="/" aria-label="OZ SPA">
-          <img className="brand-logo" src="/oz-spa-logo.png" alt="" />
-        </Link>
+        <SiteBrand href="/" ariaLabel="OZ SPA" />
       </header>
       <section className="booking-card">{children}</section>
     </main>
