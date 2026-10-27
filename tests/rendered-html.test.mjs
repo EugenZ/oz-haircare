@@ -114,6 +114,23 @@ test("renders a full journal article page from content/journal.json", async () =
   assert.match(html, /Ольга · трихолог OZ SPA/);
 });
 
+test("renders home and journal from the bundled catalog when neither the database nor the file is readable", async () => {
+  const restore = withEnv({
+    JOURNAL_CATALOG_PATH: join(tmpdir(), "oz-journal-missing", "journal.json"),
+  });
+  try {
+    const home = await render("/");
+    assert.equal(home.status, 200);
+    assert.match(await home.text(), /\/journal\/why-hair-loses-freshness/);
+
+    const article = await render("/journal/why-hair-loses-freshness");
+    assert.equal(article.status, 200);
+    assert.match(await article.text(), /Почему волосы быстро теряют свежесть/);
+  } finally {
+    restore();
+  }
+});
+
 test("keeps core client interactions wired", async () => {
   const [page, css] = await Promise.all([
     readFile(new URL("app/home-client.tsx", projectRoot), "utf8"),

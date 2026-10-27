@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { asc, notInArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { journalArticles } from "@/db/schema";
-import type { JournalArticle } from "./articles";
+import { articles as bundledArticles, type JournalArticle } from "./articles";
 
 export type JournalCatalog = { articles: JournalArticle[] };
 
@@ -16,9 +16,13 @@ function journalCatalogPath(): string {
 }
 
 function readFileCatalog(): JournalCatalog {
-  const catalog = JSON.parse(readFileSync(journalCatalogPath(), "utf8")) as JournalCatalog;
-  if (!Array.isArray(catalog.articles)) throw new Error("catalog");
-  return catalog;
+  try {
+    const catalog = JSON.parse(readFileSync(journalCatalogPath(), "utf8")) as JournalCatalog;
+    if (Array.isArray(catalog.articles)) return catalog;
+  } catch {
+    // Workers have no project files at runtime; use the copy bundled at build time.
+  }
+  return { articles: bundledArticles };
 }
 
 function writeFileCatalog(catalog: JournalCatalog): void {
