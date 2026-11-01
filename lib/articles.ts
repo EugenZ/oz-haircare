@@ -28,17 +28,7 @@ export function getArticleBySlug(slug: string): JournalArticle | undefined {
   return articles.find((article) => article.slug === slug);
 }
 
-export function journalArticlePath(slug: string, lang?: "ru" | "en"): string {
-  const base = `/journal/${slug}`;
-  return lang === "en" ? `${base}?lang=en` : base;
-}
-
-export type ArticleLanguage = "ru" | "en";
-
-export function pickArticleLanguage(value: string | string[] | undefined): ArticleLanguage {
-  const raw = Array.isArray(value) ? value[0] : value;
-  return raw === "en" ? "en" : "ru";
-}
+export { journalArticlePath, pickArticleLanguage, type ArticleLanguage } from "./i18n";
 
 export function slugifyJournalTitle(title: string): string {
   return title

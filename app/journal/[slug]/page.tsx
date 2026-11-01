@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleShell } from "../article-shell";
-import { pickArticleLanguage, type ArticleLanguage } from "@/lib/articles";
+import {
+  homeHref,
+  journalArticlePath,
+  localizeArticle,
+  pickArticleLanguage,
+  type ArticleLanguage,
+} from "@/lib/i18n";
 import { readJournalCatalog } from "@/lib/journal-catalog";
 
 type Props = {
@@ -20,11 +26,13 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     return { title: "Статья · OZ SPA" };
   }
   const lang = pickArticleLanguage((await searchParams).lang);
-  const title = article.title[lang];
-  const description = article.text[lang];
+  const { title, text: description } = localizeArticle(article, lang);
   return {
     title: `${title} · OZ SPA`,
     description,
+    alternates: {
+      languages: { ru: journalArticlePath(slug, "ru"), en: journalArticlePath(slug, "en") },
+    },
     openGraph: {
       title: `${title} · OZ SPA`,
       description,
@@ -35,10 +43,14 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
 const readCopy: Record<
   ArticleLanguage,
-  { back: string; readTime: string }
+  { back: string; readTime: string; onlyRussian: string }
 > = {
-  ru: { back: "К журналу", readTime: "Время чтения" },
-  en: { back: "Back to journal", readTime: "Reading time" },
+  ru: { back: "К журналу", readTime: "Время чтения", onlyRussian: "" },
+  en: {
+    back: "Back to journal",
+    readTime: "Reading time",
+    onlyRussian: "This article is not yet available in English, so it is shown in Russian.",
+  },
 };
 
 export default async function JournalArticlePage({ params, searchParams }: Props) {
@@ -52,27 +64,34 @@ export default async function JournalArticlePage({ params, searchParams }: Props
   }
 
   const t = readCopy[lang];
-  const journalHref = lang === "en" ? "/?lang=en#journal" : "/#journal";
+  const content = localizeArticle(article, lang);
 
   return (
     <ArticleShell slug={slug} lang={lang}>
       <article className="article-read">
-        <p className="eyebrow">{article.tag[lang]}</p>
-        <h1>{article.title[lang]}</h1>
-        <p className="article-byline">
-          <span>{article.byline[lang]}</span>
-          <span aria-hidden="true"> · </span>
-          <span>
-            {t.readTime}: {article.time[lang]}
-          </span>
-        </p>
-        <div className="article-body">
-          {article.body[lang].map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
-          ))}
+        {content.lang !== lang && (
+          <p className="article-language-note" role="note">
+            {t.onlyRussian}
+          </p>
+        )}
+        <div lang={content.lang}>
+          <p className="eyebrow">{content.tag}</p>
+          <h1>{content.title}</h1>
+          <p className="article-byline">
+            <span>{content.byline}</span>
+            <span aria-hidden="true"> · </span>
+            <span>
+              {readCopy[content.lang].readTime}: {content.time}
+            </span>
+          </p>
+          <div className="article-body">
+            {content.body.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
         </div>
         <p className="article-back">
-          <Link className="text-link" href={journalHref}>
+          <Link className="text-link" href={homeHref(lang, "#journal")}>
             {t.back} <span aria-hidden="true">↗</span>
           </Link>
         </p>

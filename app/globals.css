@@ -32,8 +32,8 @@ img { display: block; max-width: 100%; }
 .main-nav { align-items: center; display: flex; gap: 32px; }
 .language-switch { align-items: center; display: flex; font-size: 11px; gap: 6px; letter-spacing: .1em; margin-left: 27px; }
 .language-switch span { color: var(--clay); }
-.language-switch button { background: transparent; color: var(--ink-soft); font-size: 11px; letter-spacing: .1em; padding: 3px 0; }
-.language-switch button.is-active { color: var(--ink); font-weight: 700; }
+.language-switch a { background: transparent; color: var(--ink-soft); font-size: 11px; letter-spacing: .1em; padding: 3px 0; }
+.language-switch a.is-active { color: var(--ink); font-weight: 700; }
 .main-nav > a:not(.nav-cta) { color: var(--ink-soft); font-size: 13px; transition: color .2s ease; }
 .main-nav > a:not(.nav-cta):hover, .text-link:hover, .footer-instagram:hover { color: var(--clay); }
 .nav-cta { border-bottom: 1px solid var(--ink); font-size: 13px; padding-bottom: 5px; }
@@ -277,9 +277,7 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 /* Journal article reading page + draft helper (cream matches home hero / main surface) */
 .article-page { background: var(--cream); min-height: 100vh; }
 .article-page-content { padding: 0 6vw 72px; }
-.article-page-tools { align-items: center; display: flex; gap: 10px; margin-left: 27px; }
-.article-lang { border-bottom: 1px solid transparent; color: var(--ink-soft); font-size: 11px; letter-spacing: .14em; padding-bottom: 4px; text-transform: uppercase; }
-.article-lang.is-active, .article-lang[aria-current="page"] { border-bottom-color: var(--ink); color: var(--ink); }
+.article-language-note { border-left: 2px solid var(--clay); color: var(--ink-soft); font-size: 13px; line-height: 1.55; margin: 0 0 28px; padding-left: 14px; }
 .article-read { margin: 0 auto; max-width: 42rem; }
 .article-read h1 { font-family: var(--display); font-size: clamp(36px, 5.5vw, 56px); font-weight: 400; letter-spacing: -.04em; line-height: 1.02; margin: 18px 0 22px; }
 .article-byline { color: var(--ink-soft); font-size: 13px; letter-spacing: .02em; line-height: 1.5; margin: 0 0 36px; }
@@ -317,7 +315,6 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .journal-admin-status { color: var(--ink-soft); font-size: 13px; line-height: 1.55; margin-top: 18px; max-width: 38rem; }
 
 @media (max-width: 650px) {
-  .article-page-tools { margin-left: auto; order: 2; }
   .journal-admin-pair { grid-template-columns: 1fr; }
   .article-page-content { padding-bottom: 56px; }
 }

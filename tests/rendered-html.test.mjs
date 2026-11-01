@@ -93,8 +93,8 @@ test("server-renders the bilingual ROOT / RITUAL site", async () => {
   assert.match(html, /<title>OZ SPA/);
   assert.match(html, /class="language-switch"/);
   assert.doesNotMatch(html, /Все материалы|All articles/);
-  assert.match(html, />RU<\/button>/);
-  assert.match(html, />EN<\/button>/);
+  assert.match(html, /<a class="is-active" href="\/" hrefLang="ru"[^>]*>RU<\/a>/);
+  assert.match(html, /<a href="\/\?lang=en" hrefLang="en"[^>]*>EN<\/a>/);
   assert.match(html, /id="services"/);
   assert.match(html, /id="gallery"/);
   assert.match(html, /id="journal"/);
@@ -170,16 +170,136 @@ test("renders home and journal from the bundled catalog when neither the databas
   }
 });
 
+function languageSwitch(html) {
+  return html.match(/<div class="language-switch"[\s\S]*?<\/div>/)?.[0] ?? "";
+}
+
+test("journal articles share the home header and its RU / EN switch", async () => {
+  const home = await (await render("/")).text();
+  const article = await (await render("/journal/why-hair-loses-freshness")).text();
+  const stripHrefs = (html) => html.replace(/href="[^"]*"/g, 'href=""');
+
+  assert.match(article, /<header class="site-header site-header--flow">/);
+  assert.match(article, /class="menu-toggle"/);
+  assert.match(article, /<a href="\/#about">Обо мне<\/a>/);
+  assert.doesNotMatch(article, /article-lang|article-page-tools/);
+  assert.equal(stripHrefs(languageSwitch(article)), stripHrefs(languageSwitch(home)));
+  assert.match(languageSwitch(article), /<a class="is-active" href="\/journal\/why-hair-loses-freshness" hrefLang="ru"/);
+  assert.match(languageSwitch(article), /href="\/journal\/why-hair-loses-freshness\?lang=en" hrefLang="en"/);
+});
+
+test("renders the home page and journal articles in English via ?lang=en", async () => {
+  const home = await (await render("/?lang=en")).text();
+  assert.match(home, /Hair you want to/);
+  assert.match(home, /<a class="is-active" href="\/\?lang=en" hrefLang="en"/);
+  assert.match(home, /href="\/journal\/why-hair-loses-freshness\?lang=en"/);
+  assert.match(home, /Why hair loses freshness so quickly/);
+
+  const response = await render("/journal/why-hair-loses-freshness?lang=en");
+  assert.equal(response.status, 200);
+  const article = await response.text();
+  assert.match(article, /<title>Why hair loses freshness so quickly · OZ SPA<\/title>/);
+  assert.match(article, /<div lang="en"><p class="eyebrow">/);
+  assert.match(article, /<h1>Why hair loses freshness so quickly<\/h1>/);
+  assert.match(article, /Olga · OZ SPA trichologist/);
+  assert.match(article, /Reading time/);
+  assert.doesNotMatch(article, /Почему волосы быстро теряют свежесть|article-language-note/);
+  assert.match(article, /<a href="\/\?lang=en#about">About<\/a>/);
+  assert.match(article, /href="\/\?lang=en#journal"[^>]*>Back to journal/);
+  assert.match(languageSwitch(article), /<a class="is-active" href="\/journal\/why-hair-loses-freshness\?lang=en" hrefLang="en"/);
+});
+
+test("ships English copy for every bundled journal article", async () => {
+  const { articles } = JSON.parse(await readFile(new URL("content/journal.json", projectRoot), "utf8"));
+  for (const article of articles) {
+    for (const field of ["tag", "title", "text", "time"]) {
+      assert.ok(article[field].en.trim(), `${article.slug}.${field}.en`);
+      assert.notEqual(article[field].en, article[field].ru, `${article.slug}.${field}.en`);
+    }
+    assert.ok(article.body.en.length > 0, `${article.slug}.body.en`);
+  }
+});
+
+test("localizeArticle falls back to Russian when English copy is missing", tsOnly, async () => {
+  const { localizeArticle, homeHref, journalArticlePath } = await importLib("i18n");
+  const article = {
+    slug: "ru-only",
+    tag: { ru: "Волосы", en: "" },
+    title: { ru: "Только по-русски", en: "" },
+    text: { ru: "Анонс", en: "" },
+    time: { ru: "3 минуты", en: "" },
+    byline: { ru: "Ольга", en: "Olga" },
+    body: { ru: ["Абзац"], en: [] },
+  };
+  assert.deepEqual(localizeArticle(article, "en"), {
+    lang: "ru",
+    tag: "Волосы",
+    title: "Только по-русски",
+    text: "Анонс",
+    time: "3 минуты",
+    byline: "Ольга",
+    body: ["Абзац"],
+  });
+  const full = { ...article, title: { ru: "Т", en: "T" }, body: { ru: ["А"], en: ["A"] } };
+  assert.equal(localizeArticle(full, "en").lang, "en");
+  assert.equal(localizeArticle(full, "en").title, "T");
+  assert.equal(homeHref("en", "#journal"), "/?lang=en#journal");
+  assert.equal(homeHref("ru", "#journal"), "/#journal");
+  assert.equal(journalArticlePath("a", "en"), "/journal/a?lang=en");
+  assert.equal(journalArticlePath("a", "ru"), "/journal/a");
+});
+
+test("shows a Russian-only journal article with a note when English is requested", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "oz-journal-ru-only-"));
+  const catalogPath = join(dir, "journal.json");
+  writeFileSync(
+    catalogPath,
+    JSON.stringify({
+      articles: [
+        {
+          slug: "ru-only",
+          tag: { ru: "Волосы", en: "" },
+          title: { ru: "Только по-русски", en: "" },
+          text: { ru: "Анонс", en: "" },
+          time: { ru: "3 минуты", en: "" },
+          byline: { ru: "Ольга · трихолог OZ SPA", en: "Olga · OZ SPA trichologist" },
+          body: { ru: ["Русский абзац"], en: [] },
+        },
+      ],
+    }),
+  );
+  const restore = withEnv({ JOURNAL_CATALOG_PATH: catalogPath });
+  try {
+    const article = await (await render("/journal/ru-only?lang=en")).text();
+    assert.match(article, /class="article-language-note" role="note">This article is not yet available in English/);
+    assert.match(article, /<div lang="ru"><p class="eyebrow">Волосы<\/p><h1>Только по-русски<\/h1>/);
+    assert.match(article, /Время чтения/);
+    assert.match(article, /Back to journal/);
+
+    const home = await (await render("/?lang=en")).text();
+    assert.match(home, /<div lang="ru"><div class="article-meta">/);
+    assert.match(home, /href="\/journal\/ru-only\?lang=en"/);
+  } finally {
+    restore();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("keeps core client interactions wired", async () => {
-  const [page, css] = await Promise.all([
+  const [page, header, css] = await Promise.all([
     readFile(new URL("app/home-client.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/site-header.tsx", projectRoot), "utf8"),
     readFile(new URL("app/globals.css", projectRoot), "utf8"),
   ]);
 
   assert.match(page, /type Language = "ru" \| "en"/);
-  assert.match(page, /setLanguage\("ru"\)/);
-  assert.match(page, /setLanguage\("en"\)/);
-  assert.match(page, /setMenuOpen/);
+  assert.match(page, /onLanguageChange=\{changeLanguage\}/);
+  assert.match(page, /url\.searchParams\.set\("lang", "en"\)/);
+  assert.match(page, /window\.history\.replaceState/);
+  assert.match(header, /onLanguageChange\(next\)/);
+  assert.match(header, /setMenuOpen/);
+  assert.match(header, /aria-expanded/);
+  assert.match(header, /document\.documentElement\.lang = language/);
   assert.match(page, /setOpenService/);
   assert.match(page, /aboutPhotos/);
   assert.match(page, /setAboutPhotoIndex/);
@@ -188,10 +308,10 @@ test("keeps core client interactions wired", async () => {
   assert.match(page, /articlesGridRef/);
   assert.match(page, /scrollJournal/);
   assert.match(page, /journal-nav/);
-  assert.match(page, /\/journal\/" \+ article\.slug/);
+  assert.match(page, /journalArticlePath\(article\.slug, language\)/);
   assert.match(page, /from "@\/lib\/articles"/);
   assert.match(page, /SiteBrand/);
-  assert.match(page, /aria-expanded/);
+  assert.match(page, /<SiteHeader/);
   assert.match(page, /event\.preventDefault\(\)/);
   assert.match(page, /name="date"/);
   assert.match(page, /name="time"/);

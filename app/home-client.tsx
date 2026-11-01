@@ -13,7 +13,9 @@ import {
   useState,
 } from "react";
 import { SiteBrand } from "@/app/site-brand";
+import { SiteHeader, siteHeaderCopy } from "@/app/site-header";
 import type { JournalArticle } from "@/lib/articles";
+import { homeHref, journalArticlePath, localizeArticle } from "@/lib/i18n";
 import { TIME_SLOTS } from "@/lib/slots";
 
 type Language = "ru" | "en";
@@ -48,16 +50,6 @@ type AboutPhoto = {
 
 const copy = {
   ru: {
-    brandAria: "OZ SPA — на главную",
-    nav: {
-      about: "Обо мне",
-      services: "Процедуры",
-      journal: "Полезно",
-      gallery: "Работы",
-      book: "Записаться",
-      menu: "Меню",
-      close: "Закрыть",
-    },
     hero: {
       eyebrowRole: "Трихолог",
       eyebrow: "Специалист по комплексному уходу за волосами и кожей головы",
@@ -211,16 +203,6 @@ const copy = {
     },
   },
   en: {
-    brandAria: "OZ SPA — home",
-    nav: {
-      about: "About",
-      services: "Treatments",
-      journal: "Journal",
-      gallery: "Work",
-      book: "Book a visit",
-      menu: "Menu",
-      close: "Close",
-    },
     hero: {
       eyebrowRole: "Trichology",
       eyebrow: "hair restoration specialist and scalp treatment",
@@ -1132,9 +1114,14 @@ function formatOpenDay(iso: string, language: Language) {
   );
 }
 
-export default function Home({ articles }: { articles: JournalArticle[] }) {
-  const [language, setLanguage] = useState<Language>("ru");
-  const [menuOpen, setMenuOpen] = useState(false);
+export default function Home({
+  articles,
+  initialLanguage,
+}: {
+  articles: JournalArticle[];
+  initialLanguage: Language;
+}) {
+  const [language, setLanguage] = useState<Language>(initialLanguage);
   const [openService, setOpenService] = useState<string | null>(null);
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -1237,9 +1224,15 @@ export default function Home({ articles }: { articles: JournalArticle[] }) {
   );
   const timeSlots = selectedDate ? availableSlots(selectedDate) : TIME_SLOTS;
 
-  useEffect(() => {
-    document.documentElement.lang = language;
-  }, [language]);
+  // Keep ?lang in the address bar so reloads, shared links, and the way back
+  // from an article land in the same language.
+  const changeLanguage = (next: Language) => {
+    setLanguage(next);
+    const url = new URL(window.location.href);
+    if (next === "en") url.searchParams.set("lang", "en");
+    else url.searchParams.delete("lang");
+    window.history.replaceState(window.history.state, "", url);
+  };
 
   useEffect(() => {
     const el = articlesGridRef.current;
@@ -1290,8 +1283,6 @@ export default function Home({ articles }: { articles: JournalArticle[] }) {
   // until a result has arrived for the currently selected date.
   const busySlots = busyFor.date === selectedDate ? busyFor.slots : [];
   const slotsChecking = selectedDate !== "" && busyFor.date !== selectedDate;
-
-  const closeMenu = () => setMenuOpen(false);
 
   const resetBooking = () => {
     setSubmitted(false);
@@ -1346,60 +1337,12 @@ export default function Home({ articles }: { articles: JournalArticle[] }) {
 
   return (
     <main>
-      <header className="site-header">
-        <SiteBrand href="#top" ariaLabel={t.brandAria} />
-        <button
-          className="menu-toggle"
-          type="button"
-          aria-expanded={menuOpen}
-          aria-controls="main-navigation"
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          <span>{menuOpen ? t.nav.close : t.nav.menu}</span>
-          <span className="menu-lines" aria-hidden="true">
-            <i />
-            <i />
-          </span>
-        </button>
-        <nav
-          id="main-navigation"
-          className={"main-nav " + (menuOpen ? "is-open" : "")}
-          aria-label="Primary navigation"
-        >
-          <a href="#about" onClick={closeMenu}>
-            {t.nav.about}
-          </a>
-          <a href="#services" onClick={closeMenu}>
-            {t.nav.services}
-          </a>
-          <a href="#journal" onClick={closeMenu}>
-            {t.nav.journal}
-          </a>
-          <a href="#gallery" onClick={closeMenu}>
-            {t.nav.gallery}
-          </a>
-          <a className="nav-cta" href="#booking" onClick={closeMenu}>
-            {t.nav.book} <span>↗</span>
-          </a>
-        </nav>
-        <div className="language-switch" aria-label="Language">
-          <button
-            type="button"
-            className={language === "ru" ? "is-active" : ""}
-            onClick={() => setLanguage("ru")}
-          >
-            RU
-          </button>
-          <span>/</span>
-          <button
-            type="button"
-            className={language === "en" ? "is-active" : ""}
-            onClick={() => setLanguage("en")}
-          >
-            EN
-          </button>
-        </div>
-      </header>
+      <SiteHeader
+        onHome
+        language={language}
+        languageHrefs={{ ru: homeHref("ru"), en: homeHref("en") }}
+        onLanguageChange={changeLanguage}
+      />
 
       <section className="hero section-pad" id="top">
         <div className="hero-copy">
@@ -1842,25 +1785,30 @@ export default function Home({ articles }: { articles: JournalArticle[] }) {
           aria-label={t.journal.label}
         >
           <div className="articles-grid" ref={articlesGridRef}>
-            {articles.map((article, index) => (
-              <article className="article-card" key={article.slug}>
-                <div className="article-number">
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-                <div className="article-meta">
-                  <span>{article.tag[language]}</span>
-                  <span>{article.time[language]}</span>
-                </div>
-                <h3>{article.title[language]}</h3>
-                <p>{article.text[language]}</p>
-                <a
-                  href={"/journal/" + article.slug}
-                  aria-label={t.journal.read + ": " + article.title[language]}
-                >
-                  {t.journal.read} <span>↗</span>
-                </a>
-              </article>
-            ))}
+            {articles.map((article, index) => {
+              const card = localizeArticle(article, language);
+              return (
+                <article className="article-card" key={article.slug}>
+                  <div className="article-number">
+                    {String(index + 1).padStart(2, "0")}
+                  </div>
+                  <div lang={card.lang}>
+                    <div className="article-meta">
+                      <span>{card.tag}</span>
+                      <span>{card.time}</span>
+                    </div>
+                    <h3>{card.title}</h3>
+                    <p>{card.text}</p>
+                  </div>
+                  <a
+                    href={journalArticlePath(article.slug, language)}
+                    aria-label={t.journal.read + ": " + card.title}
+                  >
+                    {t.journal.read} <span>↗</span>
+                  </a>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -2056,7 +2004,7 @@ export default function Home({ articles }: { articles: JournalArticle[] }) {
       </section>
 
       <footer className="site-footer section-pad">
-        <SiteBrand href="#top" ariaLabel={t.brandAria} />
+        <SiteBrand href="#top" ariaLabel={siteHeaderCopy[language].brandAria} />
         <p>{t.footer.label}</p>
         <a
           className="footer-instagram"
