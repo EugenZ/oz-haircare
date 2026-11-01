@@ -128,13 +128,15 @@ const copy = {
     gallery: {
       label: "Работы",
       title: "Тактильный результат.",
-      text: "Смотрите на текстуру, блеск и движение волос — не только на картинку «до и после».",
+      text: "«До» и «после» показывают путь. Крупные планы — результат, который хочется потрогать: гладкость, блеск, движение.",
       study: "изучение текстуры",
       alts: [
-        "Длинные волосы в мягком солнечном свете",
-        "Профессиональный уход за волосами",
-        "Естественная текстура длинных волос",
-        "Женский портрет с длинными волосами",
+        "Медно-рыжие волосы после процедуры: гладкие пряди с глубоким блеском",
+        "До и после: длинные тёмные волосы — пушистые и волнистые до процедуры, гладкие и прямые после",
+        "До и после: каштановое каре — сухое и тусклое до, плотное и блестящее после",
+        "До и после, вид сбоку: тусклые русые волосы — и гладкие, с пепельным отливом и блеском",
+        "До и после: медные волосы — спутанные и пористые до, ровные и блестящие после",
+        "Длинные прямые волосы золотистого оттенка после процедуры, гладкие по всей длине",
       ],
     },
     journal: {
@@ -289,13 +291,15 @@ const copy = {
     gallery: {
       label: "Work",
       title: "A tactile result.",
-      text: "Look for texture, shine, and movement — not only a before-and-after picture.",
+      text: "Before and after shows the journey. Close-ups show a result you can almost feel: smoothness, shine, movement.",
       study: "texture study",
       alts: [
-        "Long hair in soft sunlight",
-        "Professional hair treatment",
-        "Natural long hair texture",
-        "Woman with long hair in warm light",
+        "Copper-red hair after treatment: smooth lengths with a deep shine",
+        "Before and after: long dark hair, frizzy and wavy before treatment, smooth and straight after",
+        "Before and after: a brown bob, dry and dull before, dense and glossy after",
+        "Before and after, side view: dull light-brown hair, then sleek with an ash tone and shine",
+        "Before and after: copper hair, tangled and porous before, even and glossy after",
+        "Long, straight golden hair after treatment, smooth from roots to ends",
       ],
     },
     journal: {
@@ -368,8 +372,6 @@ const copy = {
     },
   },
 } as const;
-
-const imageBase = "https://images.unsplash.com/";
 
 const personalReview: ServicePoint = {
   text: {
@@ -782,48 +784,61 @@ const featuredServices = services.slice(0, 4);
 const extraServices = services.slice(4);
 
 
+// Alt texts live in copy.*.gallery.alts, in the same order.
+// Before/after collages are shown at their own aspect ratio so neither half is
+// cropped; portraits are framed at 2:3. Each row of three is justified by ratio.
+const GALLERY_PER_ROW = 3;
 const galleryImages = [
   {
-    src:
-      imageBase +
-      "photo-1702910449473-0ed91bb0dd4a?auto=format&fit=crop&w=1200&q=85",
-    alt: {
-      ru: "Длинные волосы в мягком солнечном свете",
-      en: "Long hair in soft sunlight",
-    },
+    src: "/gallery/copper-gloss-result.webp",
+    width: 764,
+    height: 1280,
+    ratio: 2 / 3,
     className: "gallery-image gallery-image-tall",
   },
   {
-    src:
-      imageBase +
-      "photo-1717160675489-7779f2c91999?auto=format&fit=crop&w=1000&q=85",
-    alt: {
-      ru: "Профессиональный уход за волосами",
-      en: "Professional hair treatment",
-    },
-    className: "gallery-image",
-  },
-  {
-    src:
-      imageBase +
-      "photo-1567102064187-b6709041f322?auto=format&fit=crop&w=1000&q=85",
-    alt: {
-      ru: "Естественная текстура длинных волос",
-      en: "Natural long hair texture",
-    },
-    className: "gallery-image",
-  },
-  {
-    src:
-      imageBase +
-      "photo-1635713150362-ed0cd425e697?auto=format&fit=crop&w=1200&q=85",
-    alt: {
-      ru: "Женский портрет с длинными волосами",
-      en: "Woman with long hair in warm light",
-    },
+    src: "/gallery/dark-long-before-after.webp",
+    width: 1206,
+    height: 1100,
+    ratio: 1206 / 1100,
     className: "gallery-image gallery-image-wide",
   },
+  {
+    src: "/gallery/brown-bob-before-after.webp",
+    width: 1206,
+    height: 876,
+    ratio: 1206 / 876,
+    className: "gallery-image gallery-image-wide",
+  },
+  {
+    src: "/gallery/ash-brown-before-after.webp",
+    width: 1113,
+    height: 1094,
+    ratio: 1113 / 1094,
+    className: "gallery-image gallery-image-wide",
+  },
+  {
+    src: "/gallery/copper-before-after.webp",
+    width: 1106,
+    height: 973,
+    ratio: 1106 / 973,
+    className: "gallery-image gallery-image-wide",
+  },
+  {
+    src: "/gallery/golden-long-result.webp",
+    width: 761,
+    height: 1240,
+    ratio: 2 / 3,
+    className: "gallery-image gallery-image-tall",
+  },
 ];
+
+function galleryRowRatio(index: number) {
+  const start = index - (index % GALLERY_PER_ROW);
+  return galleryImages
+    .slice(start, start + GALLERY_PER_ROW)
+    .reduce((sum, image) => sum + image.ratio, 0);
+}
 
 // Previous about photo kept at /memory/about-salon.jpg.
 // Add another portrait by placing a file in public/ and appending it here.
@@ -1765,12 +1780,21 @@ export default function Home({ articles }: { articles: JournalArticle[] }) {
             <figure
               className={"gallery-item gallery-item-" + (index + 1)}
               key={image.src}
+              style={
+                {
+                  "--gallery-ratio": image.ratio,
+                  "--gallery-row-ratio": galleryRowRatio(index),
+                } as CSSProperties
+              }
             >
               <img
                 src={image.src}
                 alt={t.gallery.alts[index]}
                 className={image.className}
+                width={image.width}
+                height={image.height}
                 loading="lazy"
+                decoding="async"
               />
               <figcaption>
                 {String(index + 1).padStart(2, "0")} / {t.gallery.study}

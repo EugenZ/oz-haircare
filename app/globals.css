@@ -180,15 +180,15 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .gallery { background: var(--paper); }
 .gallery-heading { align-items: end; display: flex; justify-content: space-between; }
 .gallery-heading > p { color: var(--ink-soft); font-size: 14px; line-height: 1.55; margin-bottom: 3px; max-width: 250px; }
-.gallery-grid { display: grid; gap: 18px; grid-template-columns: 1.1fr .85fr .85fr; grid-template-rows: 270px 270px; margin-top: 62px; }
-.gallery-item { margin: 0; min-height: 0; overflow: hidden; position: relative; }
-.gallery-item-1 { grid-row: 1 / span 2; }
-.gallery-item-4 { grid-column: 2 / span 2; }
-.gallery-item img { height: 100%; object-fit: cover; transition: transform .5s ease; width: 100%; }
-.gallery-item:hover img { transform: scale(1.04); }
-.gallery-image-tall { object-position: 52% center; }
-.gallery-image-wide { object-position: center 45%; }
-.gallery-item figcaption { bottom: 12px; color: white; font-size: 10px; left: 14px; letter-spacing: .08em; position: absolute; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
+.gallery-grid { --gallery-gap: 18px; display: flex; flex-wrap: wrap; gap: var(--gallery-gap); margin-top: 62px; }
+/* Justified rows of three: width follows each photo's aspect ratio, so a row shares one height and collages are never cropped. */
+.gallery-item { aspect-ratio: var(--gallery-ratio); background: var(--surface-warm); flex: var(--gallery-ratio) 1 calc((100% - 2 * var(--gallery-gap)) * var(--gallery-ratio) / var(--gallery-row-ratio) - 1px); margin: 0; min-height: 0; min-width: 0; overflow: hidden; position: relative; }
+.gallery-item img { display: block; height: 100%; object-fit: cover; transition: transform .5s ease; width: 100%; }
+.gallery-item:hover img { transform: scale(1.03); }
+.gallery-image-tall { object-position: center 40%; }
+.gallery-image-wide { object-position: center; }
+.gallery-item::after { background: linear-gradient(to top, rgba(28, 22, 17, .42), transparent); bottom: 0; content: ""; height: 56px; left: 0; pointer-events: none; position: absolute; right: 0; }
+.gallery-item figcaption { bottom: 12px; z-index: 1; color: white; font-size: 10px; left: 14px; letter-spacing: .08em; position: absolute; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
 
 .journal-heading { align-items: end; display: flex; justify-content: space-between; gap: 24px; }
 .journal-heading-actions { align-items: center; display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 22px 28px; justify-content: flex-end; }
@@ -345,7 +345,7 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .service-card h3 { font-size: 34px; }
   .instagram-strip { grid-template-columns: 1fr 1fr; }
   .instagram-strip .button { justify-self: start; }
-  .gallery-grid { grid-template-rows: 220px 220px; }
+  .gallery-grid { --gallery-gap: 14px; }
   .article-card { flex-basis: calc((100% - 18px) / 2); }
   .booking { gap: 50px; grid-template-columns: 1fr 1fr; }
   .site-footer { grid-template-columns: 1fr 1fr; }
@@ -411,9 +411,9 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
   .services-footnote { align-items: flex-start; flex-direction: column; gap: 10px; }
   .instagram-strip { align-items: flex-start; display: flex; flex-direction: column; gap: 25px; }
   .instagram-copy { max-width: 360px; }
-  .gallery-grid { display: grid; gap: 12px; grid-template-columns: 1fr; grid-template-rows: auto; margin-top: 42px; }
-  .gallery-item { aspect-ratio: 3 / 2; }
-  .gallery-item-1, .gallery-item-2, .gallery-item-3, .gallery-item-4 { grid-column: auto; grid-row: auto; }
+  .gallery-grid { --gallery-gap: 12px; flex-direction: column; margin-top: 42px; }
+  .gallery-item { flex: none; width: 100%; }
+  .gallery-item:has(.gallery-image-tall) { aspect-ratio: 4 / 5; }
   .journal-carousel { margin-top: 42px; }
   .journal-heading-actions { align-items: flex-start; flex-direction: column; width: 100%; }
   .journal-nav { justify-content: flex-start; width: 100%; }

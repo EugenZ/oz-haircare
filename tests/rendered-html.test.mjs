@@ -105,6 +105,42 @@ test("server-renders the bilingual ROOT / RITUAL site", async () => {
   assert.match(html, /service-subitem-head/);
 });
 
+test("renders the before/after gallery from local photos with aligned alt texts", async () => {
+  const html = await (await render()).text();
+  const gallery = html.slice(html.indexOf('id="gallery"'), html.indexOf('id="journal"'));
+  const sources = [...gallery.matchAll(/<img[^>]*src="(\/gallery\/[a-z0-9-]+\.webp)"/g)].map((match) => match[1]);
+  assert.deepEqual(sources, [
+    "/gallery/copper-gloss-result.webp",
+    "/gallery/dark-long-before-after.webp",
+    "/gallery/brown-bob-before-after.webp",
+    "/gallery/ash-brown-before-after.webp",
+    "/gallery/copper-before-after.webp",
+    "/gallery/golden-long-result.webp",
+  ]);
+  assert.doesNotMatch(gallery, /images\.unsplash\.com/);
+  assert.doesNotMatch(gallery, /не только на картинку «до и после»/);
+  assert.match(gallery, /«До» и «после» показывают путь/);
+  assert.match(gallery, /06(<!-- -->)? \/ (<!-- -->)?изучение текстуры/);
+  for (const img of gallery.match(/<img[^>]*>/g) ?? []) {
+    assert.match(img, /alt="[^"]{12,}"/);
+    assert.match(img, /width="\d+"/);
+    assert.match(img, /height="\d+"/);
+  }
+
+  const [page, css] = await Promise.all([
+    readFile(new URL("app/home-client.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/globals.css", projectRoot), "utf8"),
+  ]);
+  const imageCount = (page.match(/src: "\/gallery\//g) ?? []).length;
+  const altCounts = [...page.matchAll(/gallery: \{[\s\S]*?alts: \[([\s\S]*?)\]/g)].map(
+    (match) => (match[1].match(/^\s*"/gm) ?? []).length,
+  );
+  assert.equal(imageCount, 6);
+  assert.deepEqual(altCounts, [6, 6]);
+  assert.match(css, /\.gallery-item \{[^}]*aspect-ratio: var\(--gallery-ratio\)/);
+  assert.match(css, /var\(--gallery-row-ratio\)/);
+});
+
 test("renders a full journal article page from content/journal.json", async () => {
   const response = await render("/journal/why-hair-loses-freshness");
   assert.equal(response.status, 200);
