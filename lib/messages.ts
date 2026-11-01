@@ -51,7 +51,7 @@ export function clientMessageText(
     return `Hi ${name}! Unfortunately Olga (${PRACTICE_NAME}) can't see you at ${slot}. You're welcome to pick another time: ${url}`;
   }
   if (kind === "confirmed") {
-    return `Здравствуйте, ${name}! Ольга (${PRACTICE_NAME}) подтвердила вашу запись: ${slot}, ${LOCATION.ru}. Детали и добавить в календарь: ${url}`;
+    return `Здравствуйте, ${name}! Ольга (${PRACTICE_NAME}) подтвердила вашу запись: ${slot}, ${LOCATION.ru}. Детали добавить в календарь: ${url}`;
   }
   if (kind === "proposed") {
     return `Здравствуйте, ${name}! К сожалению, ${previousSlot ?? "выбранное время"} не получится. Ольга (${PRACTICE_NAME}) предлагает ${slot}. Подтвердите или отклоните: ${url}`;
