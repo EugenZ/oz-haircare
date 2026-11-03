@@ -6,7 +6,7 @@ import { JournalAdminDashboard } from "./journal-admin-dashboard";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Journal draft · OZ SPA",
+  title: "Journal admin · OZ SPA",
   robots: { index: false, follow: false },
 };
 
@@ -16,10 +16,7 @@ export default async function JournalAdminPage() {
     <ArticleShell slug="admin" lang="ru">
       <div className="article-read journal-admin">
         <p className="eyebrow">Journal</p>
-        <h1>Новая статья / New article</h1>
-        <JournalAdminDashboard
-          articles={articles.map((article) => ({ slug: article.slug, title: article.title }))}
-        />
+        <JournalAdminDashboard articles={articles} />
       </div>
     </ArticleShell>
   );

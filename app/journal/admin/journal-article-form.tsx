@@ -6,14 +6,34 @@ import { slugifyJournalTitle } from "@/lib/articles";
 import type { ArticleLanguage } from "@/lib/i18n";
 import { ArticleBody } from "../article-body";
 
-type Draft = Record<"tag" | "title" | "time" | "body", Record<ArticleLanguage, string>>;
+type Draft = Record<"tag" | "title" | "time" | "byline" | "body", Record<ArticleLanguage, string>>;
+
+const defaultByline = {
+  ru: "Ольга · трихолог OZ SPA",
+  en: "Olga · OZ SPA trichologist",
+};
 
 const emptyDraft: Draft = {
   tag: { ru: "", en: "" },
   title: { ru: "", en: "" },
   time: { ru: "5 минут чтения", en: "5 min read" },
+  byline: defaultByline,
   body: { ru: "", en: "" },
 };
+
+function articleDraft(article?: JournalArticle): Draft {
+  if (!article) return emptyDraft;
+  return {
+    tag: { ru: article.tag?.ru ?? "", en: article.tag?.en ?? "" },
+    title: { ru: article.title?.ru ?? "", en: article.title?.en ?? "" },
+    time: { ru: article.time?.ru ?? "", en: article.time?.en ?? "" },
+    byline: {
+      ru: article.byline?.ru ?? defaultByline.ru,
+      en: article.byline ? article.byline.en ?? "" : defaultByline.en,
+    },
+    body: { ru: (article.body?.ru ?? []).join("\n\n"), en: (article.body?.en ?? []).join("\n\n") },
+  };
+}
 
 function readDraft(form: HTMLFormElement): Draft {
   const data = new FormData(form);
@@ -21,13 +41,11 @@ function readDraft(form: HTMLFormElement): Draft {
     ru: String(data.get(`${name}Ru`) ?? ""),
     en: String(data.get(`${name}En`) ?? ""),
   });
-  return { tag: pair("tag"), title: pair("title"), time: pair("time"), body: pair("body") };
+  return {
+    tag: pair("tag"), title: pair("title"), time: pair("time"),
+    byline: pair("byline"), body: pair("body"),
+  };
 }
-
-const defaultByline = {
-  ru: "Ольга · трихолог OZ SPA",
-  en: "Olga · OZ SPA trichologist",
-};
 
 function splitParagraphs(value: string): string[] {
   return value
@@ -46,6 +64,8 @@ function buildArticle(form: {
   textEn: string;
   timeRu: string;
   timeEn: string;
+  bylineRu: string;
+  bylineEn: string;
   bodyRu: string;
   bodyEn: string;
 }): JournalArticle {
@@ -55,7 +75,7 @@ function buildArticle(form: {
     title: { ru: form.titleRu.trim(), en: form.titleEn.trim() },
     text: { ru: form.textRu.trim(), en: form.textEn.trim() },
     time: { ru: form.timeRu.trim(), en: form.timeEn.trim() },
-    byline: defaultByline,
+    byline: { ru: form.bylineRu.trim(), en: form.bylineEn.trim() },
     body: {
       ru: splitParagraphs(form.bodyRu),
       en: splitParagraphs(form.bodyEn),
@@ -66,18 +86,24 @@ function buildArticle(form: {
 export function JournalArticleForm({
   apiKey,
   existingSlugs,
-  onPublished,
+  initialArticle,
+  onSaved,
+  onCancel,
 }: {
   apiKey: string;
   existingSlugs: string[];
-  onPublished: (article: JournalArticle) => void;
+  initialArticle?: JournalArticle;
+  onSaved: (article: JournalArticle) => void;
+  onCancel?: () => void;
 }) {
-  const [titleEn, setTitleEn] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugTouched, setSlugTouched] = useState(false);
+  const [titleEn, setTitleEn] = useState(initialArticle?.title?.en ?? "");
+  const [slug, setSlug] = useState(initialArticle?.slug ?? "");
+  const [slugTouched, setSlugTouched] = useState(Boolean(initialArticle));
   const [status, setStatus] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [draft, setDraft] = useState<Draft>(() => articleDraft(initialArticle));
   const [previewLang, setPreviewLang] = useState<ArticleLanguage>("ru");
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
   const previewBody = splitParagraphs(draft.body[previewLang]);
 
   const suggestedSlug = useMemo(() => slugifyJournalTitle(titleEn), [titleEn]);
@@ -101,6 +127,8 @@ export function JournalArticleForm({
       textEn: String(data.get("textEn") ?? ""),
       timeRu: String(data.get("timeRu") ?? "5 минут чтения"),
       timeEn: String(data.get("timeEn") ?? "5 min read"),
+      bylineRu: String(data.get("bylineRu") ?? ""),
+      bylineEn: String(data.get("bylineEn") ?? ""),
       bodyRu: String(data.get("bodyRu") ?? ""),
       bodyEn: String(data.get("bodyEn") ?? ""),
     });
@@ -108,12 +136,17 @@ export function JournalArticleForm({
       setStatus("Slug must use lowercase letters, numbers, and hyphens only.");
       return null;
     }
-    if (existingSlugs.includes(article.slug)) {
+    if (existingSlugs.includes(article.slug) && article.slug !== initialArticle?.slug) {
       setStatus(`Slug “${article.slug}” already exists.`);
       return null;
     }
-    if (!article.title.ru || !article.title.en || article.body.ru.length === 0 || article.body.en.length === 0) {
-      setStatus("Add titles and at least one paragraph in each language.");
+    if (
+      !article.title.ru || article.body.ru.length === 0 ||
+      (!initialArticle && (!article.title.en || article.body.en.length === 0))
+    ) {
+      setStatus(initialArticle
+        ? "Add a Russian title and at least one paragraph."
+        : "Add titles and at least one paragraph in each language.");
       return null;
     }
     return article;
@@ -138,14 +171,15 @@ export function JournalArticleForm({
       setStatus("Enter the admin key above to save the article on the server.");
       return;
     }
+    setSaving(true);
     try {
       const response = await fetch("/api/journal", {
-        method: "POST",
+        method: initialArticle ? "PATCH" : "POST",
         headers: {
           "content-type": "application/json",
           authorization: `Bearer ${apiKey.trim()}`,
         },
-        body: JSON.stringify(article),
+        body: JSON.stringify(initialArticle ? { slug: initialArticle.slug, article } : article),
       });
       const json = (await response.json().catch(() => ({}))) as { error?: string };
       if (response.status === 401) {
@@ -156,16 +190,21 @@ export function JournalArticleForm({
         setStatus(
           json.error === "duplicate"
             ? `Slug “${article.slug}” already exists.`
-            : json.error === "catalog_unwritable"
-              ? "The server could not write the journal file."
-              : "Could not save the article.",
+            : json.error === "not_found"
+              ? "This article no longer exists. Return to the article list."
+              : json.error === "catalog_unwritable"
+                ? "The server could not write the journal."
+                : "Could not save the article.",
         );
         return;
       }
-      onPublished(article);
+      setDirty(false);
+      onSaved(article);
       setStatus(`Saved ${article.slug} to the journal.`);
     } catch {
       setStatus("Could not reach the server.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -173,12 +212,15 @@ export function JournalArticleForm({
     <form
       className="journal-admin-form"
       onSubmit={onSubmit}
-      onChange={(event) => setDraft(readDraft(event.currentTarget))}
+      onChange={(event) => {
+        setDraft(readDraft(event.currentTarget));
+        setDirty(true);
+      }}
     >
       <p className="journal-admin-lead">
-        A valid admin key writes the article to <code>content/journal.json</code>. Download still
-        saves a JSON file you can commit by hand, or run <code>npm run journal:new</code> for a
-        blank scaffold.
+        {initialArticle
+          ? "Edit the article below. Saving updates the journal without changing its link."
+          : "Write the article in Russian and English, then save it to the journal."}
       </p>
 
       <div className="journal-admin-grid">
@@ -187,6 +229,7 @@ export function JournalArticleForm({
           <input
             name="slug"
             value={slug}
+            readOnly={Boolean(initialArticle)}
             onChange={(event) => {
               setSlugTouched(true);
               setSlug(event.target.value);
@@ -194,39 +237,48 @@ export function JournalArticleForm({
             placeholder={suggestedSlug || "my-article-slug"}
             required
           />
+          {initialArticle ? <small className="journal-admin-hint">The article link stays the same.</small> : null}
         </label>
         <label>
           <span>Tag (RU / EN)</span>
           <div className="journal-admin-pair">
-            <input name="tagRu" placeholder="База" required />
-            <input name="tagEn" placeholder="Basics" required />
+            <input name="tagRu" aria-label="Tag (RU)" defaultValue={initialArticle?.tag?.ru} placeholder="База" required />
+            <input name="tagEn" aria-label="Tag (EN)" defaultValue={initialArticle?.tag?.en} placeholder="Basics" required={!initialArticle || Boolean(initialArticle.tag?.en)} />
           </div>
         </label>
         <label>
           <span>Title (RU / EN)</span>
           <div className="journal-admin-pair">
-            <input name="titleRu" placeholder="Заголовок" required />
+            <input name="titleRu" aria-label="Title (RU)" defaultValue={initialArticle?.title?.ru} placeholder="Заголовок" required />
             <input
               name="titleEn"
+              aria-label="Title (EN)"
               value={titleEn}
               onChange={(event) => onTitleEnChange(event.target.value)}
               placeholder="Title"
-              required
+              required={!initialArticle || Boolean(initialArticle.title?.en)}
             />
           </div>
         </label>
         <label>
           <span>Teaser (RU / EN)</span>
           <div className="journal-admin-pair">
-            <textarea name="textRu" rows={3} placeholder="Кратко для карточки" required />
-            <textarea name="textEn" rows={3} placeholder="Card teaser" required />
+            <textarea name="textRu" aria-label="Teaser (RU)" defaultValue={initialArticle?.text?.ru} rows={3} placeholder="Кратко для карточки" required />
+            <textarea name="textEn" aria-label="Teaser (EN)" defaultValue={initialArticle?.text?.en} rows={3} placeholder="Card teaser" required={!initialArticle || Boolean(initialArticle.text?.en)} />
           </div>
         </label>
         <label>
           <span>Reading time (RU / EN)</span>
           <div className="journal-admin-pair">
-            <input name="timeRu" defaultValue="5 минут чтения" required />
-            <input name="timeEn" defaultValue="5 min read" required />
+            <input name="timeRu" aria-label="Reading time (RU)" defaultValue={initialArticle?.time?.ru ?? "5 минут чтения"} required />
+            <input name="timeEn" aria-label="Reading time (EN)" defaultValue={initialArticle ? initialArticle.time?.en ?? "" : "5 min read"} required={!initialArticle || Boolean(initialArticle.time?.en)} />
+          </div>
+        </label>
+        <label>
+          <span>Author (RU / EN)</span>
+          <div className="journal-admin-pair">
+            <input name="bylineRu" aria-label="Author (RU)" defaultValue={initialArticle?.byline?.ru ?? defaultByline.ru} required />
+            <input name="bylineEn" aria-label="Author (EN)" defaultValue={initialArticle?.byline ? initialArticle.byline.en ?? "" : defaultByline.en} required={!initialArticle || Boolean(initialArticle.byline?.en)} />
           </div>
         </label>
         <p className="journal-admin-hint">
@@ -236,11 +288,11 @@ export function JournalArticleForm({
         </p>
         <label>
           <span>Body (RU)</span>
-          <textarea name="bodyRu" rows={8} required />
+          <textarea name="bodyRu" defaultValue={draft.body.ru} rows={8} required />
         </label>
         <label>
           <span>Body (EN)</span>
-          <textarea name="bodyEn" rows={8} required />
+          <textarea name="bodyEn" defaultValue={draft.body.en} rows={8} required={!initialArticle || Boolean(initialArticle.body?.en?.length)} />
         </label>
       </div>
 
@@ -265,7 +317,7 @@ export function JournalArticleForm({
           <p className="eyebrow">{draft.tag[previewLang] || "—"}</p>
           <p className="journal-admin-preview-title">{draft.title[previewLang] || "—"}</p>
           <p className="article-byline">
-            {defaultByline[previewLang]} · {draft.time[previewLang]}
+            {draft.byline[previewLang]} · {draft.time[previewLang]}
           </p>
           {previewBody.length > 0 ? (
             <ArticleBody body={previewBody} />
@@ -276,9 +328,21 @@ export function JournalArticleForm({
       </section>
 
       <div className="journal-admin-actions">
-        <button type="submit" className="button button-dark">
-          Save article
+        <button type="submit" className="button button-dark" disabled={saving}>
+          {saving ? "Saving…" : initialArticle ? "Save changes / Сохранить" : "Save article"}
         </button>
+        {onCancel ? (
+          <button
+            type="button"
+            className="journal-admin-delete"
+            disabled={saving}
+            onClick={() => {
+              if (!dirty || window.confirm("Discard unsaved changes?")) onCancel();
+            }}
+          >
+            Cancel / Отмена
+          </button>
+        ) : null}
         <button
           type="button"
           className="journal-admin-delete"

@@ -1,14 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import type { Localized } from "@/lib/articles";
+import type { JournalArticle } from "@/lib/articles";
 import { journalArticlePath } from "@/lib/i18n";
 import { JournalArticleForm } from "./journal-article-form";
 
-export type JournalAdminEntry = {
-  slug: string;
-  title: Localized;
-};
+export type JournalAdminEntry = JournalArticle;
 
 function sameOrder(left: string[], right: string[]) {
   return left.length === right.length && left.every((slug, index) => slug === right[index]);
@@ -44,11 +41,18 @@ export function JournalAdminDashboard({ articles }: { articles: JournalAdminEntr
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const [draggingSlug, setDraggingSlug] = useState<string | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<JournalArticle | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const editorHeadingRef = useRef<HTMLHeadingElement>(null);
   const orderDirty = !sameOrder(
     entries.map((entry) => entry.slug),
     savedSlugs,
   );
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if (editingArticle) editorHeadingRef.current?.focus();
+  }, [editingArticle]);
 
   useEffect(() => {
     const list = listRef.current;
@@ -185,116 +189,142 @@ export function JournalAdminDashboard({ articles }: { articles: JournalAdminEntr
 
   return (
     <>
-      <form className="journal-admin-key" onSubmit={unlock}>
-        <label>
-          <span>Admin key</span>
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={apiKey}
-            onChange={(event) => {
-              const value = event.target.value;
-              setApiKey(value);
-              if (!value.trim()) {
-                setKeyReady(false);
-                setNotice(null);
-              }
-            }}
-            placeholder="ADMIN_API_TOKEN"
-            disabled={checkingKey}
-          />
-        </label>
-        <button type="submit" className="button button-dark" disabled={checkingKey}>
-          {checkingKey ? "Checking…" : "Unlock"}
-        </button>
-      </form>
+      <section hidden={Boolean(editingArticle)}>
+        <h1>Статьи / Journal articles</h1>
+        <form className="journal-admin-key" onSubmit={unlock}>
+          <label>
+            <span>Admin key</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={apiKey}
+              onChange={(event) => {
+                const value = event.target.value;
+                setApiKey(value);
+                if (!value.trim()) {
+                  setKeyReady(false);
+                  setNotice(null);
+                }
+              }}
+              placeholder="ADMIN_API_TOKEN"
+              disabled={checkingKey}
+            />
+          </label>
+          <button type="submit" className="button button-dark" disabled={checkingKey}>
+            {checkingKey ? "Checking…" : "Unlock"}
+          </button>
+        </form>
 
-      {notice ? (
-        <p className="journal-admin-status" role="status">
-          {notice}
-        </p>
-      ) : null}
+        {notice ? (
+          <p className="journal-admin-status" role="status">
+            {notice}
+          </p>
+        ) : null}
 
-      {keyReady ? (
-        <>
-          <ul
-            ref={listRef}
-            className={draggingSlug ? "journal-admin-list is-sorting" : "journal-admin-list"}
-            aria-label="Journal articles"
-          >
-            {entries.map((entry) => (
-              <li
-                className={entry.slug === draggingSlug ? "journal-admin-row is-dragging" : "journal-admin-row"}
-                key={entry.slug}
-                data-slug={entry.slug}
-              >
-                <button
-                  type="button"
-                  className="journal-admin-grip"
-                  aria-label={`Reorder ${entry.title.ru}`}
-                  disabled={savingOrder || pendingSlug !== null}
-                  onPointerDown={(event) => {
-                    if (event.button !== 0) return;
-                    setDraggingSlug(entry.slug);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
-                    event.preventDefault();
-                    const direction = event.key === "ArrowUp" ? -1 : 1;
-                    setEntries((current) => {
-                      const from = current.findIndex((item) => item.slug === entry.slug);
-                      return moveEntry(current, entry.slug, from + direction);
-                    });
-                  }}
+        {keyReady ? (
+          <>
+            <ul
+              ref={listRef}
+              className={draggingSlug ? "journal-admin-list is-sorting" : "journal-admin-list"}
+              aria-label="Journal articles"
+            >
+              {entries.map((entry) => (
+                <li
+                  className={entry.slug === draggingSlug ? "journal-admin-row is-dragging" : "journal-admin-row"}
+                  key={entry.slug}
+                  data-slug={entry.slug}
                 >
-                  <span />
-                  <span />
-                  <span />
+                  <button
+                    type="button"
+                    className="journal-admin-grip"
+                    aria-label={`Reorder ${entry.title.ru}`}
+                    disabled={savingOrder || pendingSlug !== null}
+                    onPointerDown={(event) => {
+                      if (event.button !== 0) return;
+                      setDraggingSlug(entry.slug);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+                      event.preventDefault();
+                      const direction = event.key === "ArrowUp" ? -1 : 1;
+                      setEntries((current) => {
+                        const from = current.findIndex((item) => item.slug === entry.slug);
+                        return moveEntry(current, entry.slug, from + direction);
+                      });
+                    }}
+                  >
+                    <span />
+                    <span />
+                    <span />
+                  </button>
+                  <p>
+                    {entry.title.ru}
+                    <small>{entry.slug}</small>
+                  </p>
+                  <a
+                    className="journal-admin-open"
+                    href={journalArticlePath(entry.slug)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Открыть
+                  </a>
+                  <button
+                    type="button"
+                    className="journal-admin-open"
+                    disabled={pendingSlug !== null || savingOrder || draggingSlug !== null}
+                    onClick={() => setEditingArticle(entry)}
+                  >
+                    Редактировать
+                  </button>
+                  <button
+                    type="button"
+                    className="journal-admin-delete"
+                    disabled={pendingSlug === entry.slug || savingOrder}
+                    onClick={() => remove(entry)}
+                  >
+                    Удалить
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {orderDirty ? (
+              <div className="journal-admin-save-order">
+                <button type="button" className="button button-dark" onClick={saveOrder} disabled={savingOrder}>
+                  Save this order.
                 </button>
-                <p>
-                  {entry.title.ru}
-                  <small>{entry.slug}</small>
-                </p>
-                <a
-                  className="journal-admin-open"
-                  href={journalArticlePath(entry.slug)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Открыть
-                </a>
-                <button
-                  type="button"
-                  className="journal-admin-delete"
-                  disabled={pendingSlug === entry.slug || savingOrder}
-                  onClick={() => remove(entry)}
-                >
-                  Удалить
-                </button>
-              </li>
-            ))}
-          </ul>
+              </div>
+            ) : null}
 
-          {orderDirty ? (
-            <div className="journal-admin-save-order">
-              <button type="button" className="button button-dark" onClick={saveOrder} disabled={savingOrder}>
-                Save this order.
-              </button>
-            </div>
-          ) : null}
-
+            <h2>Новая статья / New article</h2>
+            <JournalArticleForm
+              apiKey={apiKey}
+              existingSlugs={entries.map((entry) => entry.slug)}
+              onSaved={(article) => {
+                setEntries((current) => [...current, article]);
+                setSavedSlugs((current) => [...current, article.slug]);
+              }}
+            />
+          </>
+        ) : null}
+      </section>
+      {keyReady && editingArticle ? (
+        <section>
+          <h1 ref={editorHeadingRef} tabIndex={-1}>Редактировать статью / Edit article</h1>
           <JournalArticleForm
+            key={editingArticle.slug}
             apiKey={apiKey}
             existingSlugs={entries.map((entry) => entry.slug)}
-            onPublished={(article) => {
-              setEntries((current) => [
-                ...current,
-                { slug: article.slug, title: article.title },
-              ]);
-              setSavedSlugs((current) => [...current, article.slug]);
+            initialArticle={editingArticle}
+            onCancel={() => setEditingArticle(null)}
+            onSaved={(article) => {
+              setEntries((current) => current.map((entry) => entry.slug === article.slug ? article : entry));
+              setNotice(`Saved ${article.slug} to the journal.`);
+              setEditingArticle(null);
             }}
           />
-        </>
+        </section>
       ) : null}
     </>
   );
