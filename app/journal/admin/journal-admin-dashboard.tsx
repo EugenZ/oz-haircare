@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Localized } from "@/lib/articles";
+import { journalArticlePath } from "@/lib/i18n";
 import { JournalArticleForm } from "./journal-article-form";
 
 export type JournalAdminEntry = {
@@ -254,6 +255,14 @@ export function JournalAdminDashboard({ articles }: { articles: JournalAdminEntr
                   {entry.title.ru}
                   <small>{entry.slug}</small>
                 </p>
+                <a
+                  className="journal-admin-open"
+                  href={journalArticlePath(entry.slug)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Открыть
+                </a>
                 <button
                   type="button"
                   className="journal-admin-delete"

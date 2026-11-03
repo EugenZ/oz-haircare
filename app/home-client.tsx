@@ -1185,10 +1185,32 @@ export default function Home({
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
+  // The active photo follows the pointer through CSS variables set on the DOM
+  // node, so a drag does not re-render the whole page on every move.
+  const dragAboutPhoto = (carousel: HTMLElement, delta: number | null) => {
+    const photo = carousel.querySelector<HTMLElement>(".about-photo.is-active");
+    if (!photo) return;
+    if (delta == null) {
+      photo.classList.remove("is-dragging");
+      photo.style.removeProperty("--dx");
+      photo.style.removeProperty("--drot");
+      return;
+    }
+    photo.classList.add("is-dragging");
+    photo.style.setProperty("--dx", `${delta}px`);
+    photo.style.setProperty("--drot", `${delta / 24}deg`);
+  };
+
+  const handleAboutPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (aboutSwipeStart.current == null) return;
+    dragAboutPhoto(event.currentTarget, event.clientX - aboutSwipeStart.current);
+  };
+
   const handleAboutPointerUp = (event: PointerEvent<HTMLDivElement>) => {
     if (aboutSwipeStart.current == null) return;
     const delta = event.clientX - aboutSwipeStart.current;
     aboutSwipeStart.current = null;
+    dragAboutPhoto(event.currentTarget, null);
     if (Math.abs(delta) < 48) return;
     showAboutPhoto(aboutPhotoIndex + (delta < 0 ? 1 : -1));
   };
@@ -1431,9 +1453,11 @@ export default function Home({
           aria-roledescription="carousel"
           aria-label={t.about.label}
           onPointerDown={handleAboutPointerDown}
+          onPointerMove={handleAboutPointerMove}
           onPointerUp={handleAboutPointerUp}
-          onPointerCancel={() => {
+          onPointerCancel={(event) => {
             aboutSwipeStart.current = null;
+            dragAboutPhoto(event.currentTarget, null);
           }}
         >
           <div className="about-grid">

@@ -3,6 +3,26 @@
 import { FormEvent, useMemo, useState } from "react";
 import type { JournalArticle } from "@/lib/articles";
 import { slugifyJournalTitle } from "@/lib/articles";
+import type { ArticleLanguage } from "@/lib/i18n";
+import { ArticleBody } from "../article-body";
+
+type Draft = Record<"tag" | "title" | "time" | "body", Record<ArticleLanguage, string>>;
+
+const emptyDraft: Draft = {
+  tag: { ru: "", en: "" },
+  title: { ru: "", en: "" },
+  time: { ru: "5 минут чтения", en: "5 min read" },
+  body: { ru: "", en: "" },
+};
+
+function readDraft(form: HTMLFormElement): Draft {
+  const data = new FormData(form);
+  const pair = (name: string) => ({
+    ru: String(data.get(`${name}Ru`) ?? ""),
+    en: String(data.get(`${name}En`) ?? ""),
+  });
+  return { tag: pair("tag"), title: pair("title"), time: pair("time"), body: pair("body") };
+}
 
 const defaultByline = {
   ru: "Ольга · трихолог OZ SPA",
@@ -53,6 +73,9 @@ export function JournalArticleForm({
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [previewLang, setPreviewLang] = useState<ArticleLanguage>("ru");
+  const previewBody = splitParagraphs(draft.body[previewLang]);
 
   const suggestedSlug = useMemo(() => slugifyJournalTitle(titleEn), [titleEn]);
 
@@ -144,7 +167,11 @@ export function JournalArticleForm({
   };
 
   return (
-    <form className="journal-admin-form" onSubmit={onSubmit}>
+    <form
+      className="journal-admin-form"
+      onSubmit={onSubmit}
+      onChange={(event) => setDraft(readDraft(event.currentTarget))}
+    >
       <p className="journal-admin-lead">
         A valid admin key writes the article to <code>content/journal.json</code>. Download still
         saves a JSON file you can commit by hand, or run <code>npm run journal:new</code> for a
@@ -199,8 +226,13 @@ export function JournalArticleForm({
             <input name="timeEn" defaultValue="5 min read" required />
           </div>
         </label>
+        <p className="journal-admin-hint">
+          Blank line — new paragraph · line break is kept · <code>## </code> heading ·{" "}
+          <code>* </code> or <code>- </code> bullet · <code>1. </code> numbered item ·{" "}
+          <code>**bold**</code>
+        </p>
         <label>
-          <span>Body (RU) — line breaks and spacing are preserved</span>
+          <span>Body (RU)</span>
           <textarea name="bodyRu" rows={8} required />
         </label>
         <label>
@@ -208,6 +240,37 @@ export function JournalArticleForm({
           <textarea name="bodyEn" rows={8} required />
         </label>
       </div>
+
+      <section className="journal-admin-preview" aria-label="Preview">
+        <div className="journal-admin-preview-head">
+          <span>Preview</span>
+          <div className="journal-admin-preview-tabs" role="group" aria-label="Preview language">
+            {(["ru", "en"] as const).map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                className={lang === previewLang ? "is-active" : ""}
+                aria-pressed={lang === previewLang}
+                onClick={() => setPreviewLang(lang)}
+              >
+                {lang.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="journal-admin-preview-page" lang={previewLang}>
+          <p className="eyebrow">{draft.tag[previewLang] || "—"}</p>
+          <p className="journal-admin-preview-title">{draft.title[previewLang] || "—"}</p>
+          <p className="article-byline">
+            {defaultByline[previewLang]} · {draft.time[previewLang]}
+          </p>
+          {previewBody.length > 0 ? (
+            <ArticleBody body={previewBody} />
+          ) : (
+            <p className="journal-admin-hint">The body text will appear here.</p>
+          )}
+        </div>
+      </section>
 
       <div className="journal-admin-actions">
         <button type="submit" className="button button-dark">
