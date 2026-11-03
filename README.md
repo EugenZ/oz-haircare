@@ -53,6 +53,13 @@ npm run build
 npm run start
 ```
 
+To test journal navigation in a browser against the local production Worker:
+
+```bash
+npx playwright install chromium
+npm run test:browser
+```
+
 ## OpenDesign
 
 The site includes a portable OpenDesign design-system package at
