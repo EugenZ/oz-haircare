@@ -1,4 +1,4 @@
-// Create, reorder, and delete journal articles. Writes Postgres when it is reachable.
+// Create, edit, reorder, and delete journal articles. Writes Postgres when it is reachable.
 import { readJournalCatalog, writeJournalCatalog } from "./journal-catalog";
 import type { JournalArticle, Localized } from "./articles";
 
@@ -10,32 +10,32 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function localized(value: unknown, max: number): Localized | null {
+function localized(value: unknown, max: number, allowMissingEnglish = false): Localized | null {
   if (!isRecord(value)) return null;
   const ru = String(value.ru ?? "").trim();
   const en = String(value.en ?? "").trim();
-  if (!ru || !en || ru.length > max || en.length > max) return null;
+  if (!ru || (!en && !allowMissingEnglish) || ru.length > max || en.length > max) return null;
   return { ru, en };
 }
 
-function paragraphs(value: unknown): string[] | null {
-  if (!Array.isArray(value) || value.length === 0 || value.length > 40) return null;
+function paragraphs(value: unknown, allowEmpty = false): string[] | null {
+  if (!Array.isArray(value) || (!allowEmpty && value.length === 0) || value.length > 40) return null;
   const lines = value.map((line) => String(line ?? "").trim());
   if (lines.some((line) => !line || line.length > 8000)) return null;
   return lines;
 }
 
-export function parseJournalArticle(value: unknown): JournalArticle | null {
+export function parseJournalArticle(value: unknown, allowMissingEnglish = false): JournalArticle | null {
   if (!isRecord(value) || !SLUG.test(String(value.slug ?? "").trim())) return null;
-  const tag = localized(value.tag, 80);
-  const title = localized(value.title, 200);
-  const text = localized(value.text, 500);
-  const time = localized(value.time, 80);
-  const byline = value.byline == null ? null : localized(value.byline, 120);
+  const tag = localized(value.tag, 80, allowMissingEnglish);
+  const title = localized(value.title, 200, allowMissingEnglish);
+  const text = localized(value.text, 500, allowMissingEnglish);
+  const time = localized(value.time, 80, allowMissingEnglish);
+  const byline = value.byline == null ? null : localized(value.byline, 120, allowMissingEnglish);
   if (!tag || !title || !text || !time || (value.byline != null && !byline)) return null;
   if (!isRecord(value.body)) return null;
   const ru = paragraphs(value.body.ru);
-  const en = paragraphs(value.body.en);
+  const en = paragraphs(value.body.en ?? [], allowMissingEnglish);
   if (!ru || !en) return null;
   return {
     slug: String(value.slug).trim(),
@@ -64,6 +64,26 @@ export async function appendJournalArticle(
     catalog.articles.push(article);
     await writeJournalCatalog(catalog);
     return { ok: true, article };
+  } catch {
+    return { ok: false, error: "catalog_unwritable" };
+  }
+}
+
+export async function updateJournalArticle(
+  slug: unknown,
+  value: unknown,
+): Promise<{ ok: true; article: JournalArticle } | { ok: false; error: JournalWriteError }> {
+  const article = parseJournalArticle(value, true);
+  if (typeof slug !== "string" || !SLUG.test(slug) || !article || article.slug !== slug) {
+    return { ok: false, error: "invalid" };
+  }
+  try {
+    const catalog = await readJournalCatalog();
+    const index = catalog.articles.findIndex((entry) => entry.slug === slug);
+    if (index < 0) return { ok: false, error: "not_found" };
+    catalog.articles[index] = { ...catalog.articles[index], ...article };
+    await writeJournalCatalog(catalog);
+    return { ok: true, article: catalog.articles[index] };
   } catch {
     return { ok: false, error: "catalog_unwritable" };
   }

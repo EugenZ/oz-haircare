@@ -253,6 +253,37 @@ describe("booking lifecycle on a real Postgres schema", { skip }, () => {
     return { id, token, body };
   }
 
+  test("journal edits persist in Postgres without changing article order", async () => {
+    const article = {
+      slug: "database-article",
+      tag: { ru: "Уход", en: "Care" },
+      title: { ru: "Заголовок", en: "Title" },
+      text: { ru: "Описание", en: "Teaser" },
+      time: { ru: "3 минуты", en: "3 min" },
+      byline: { ru: "Автор", en: "Author" },
+      body: { ru: ["Текст."], en: ["Text."] },
+    };
+    const other = { ...article, slug: "other-article" };
+    await scoped.query(
+      "insert into journal_articles (slug, position, document) values ($1, 0, $2::jsonb), ($3, 1, $4::jsonb)",
+      [other.slug, JSON.stringify(other), article.slug, JSON.stringify(article)],
+    );
+    const updated = { ...article, title: { ru: "Новый заголовок", en: "New title" } };
+    const response = await call("/api/journal", {
+      method: "PATCH",
+      headers: { "content-type": "application/json", authorization: `Bearer ${ADMIN_TOKEN}` },
+      body: JSON.stringify({ slug: article.slug, article: updated }),
+    });
+    assert.equal(response.status, 200);
+    const { rows } = await scoped.query("select slug, position, document from journal_articles order by position");
+    assert.deepEqual(rows, [
+      { slug: other.slug, position: 0, document: other },
+      { slug: article.slug, position: 1, document: updated },
+    ]);
+    const page = await call(`/journal/${article.slug}?lang=en`, { headers: { accept: "text/html" } });
+    assert.match(await page.text(), /New title/);
+  });
+
   test("submit stores a pending booking and emails Olga a manage link", async () => {
     const mark = calls.emails.length;
     const { id, token } = await submit({ email: "client1@oz.test", date: "2030-11-04", time: "10:00" });

@@ -1,10 +1,11 @@
 // Journal writer. Authorization: Bearer $ADMIN_API_TOKEN.
-// POST appends one article. PUT replaces article order. DELETE removes one by slug.
+// POST appends, PATCH edits, PUT reorders, and DELETE removes an article.
 import { hasBearer, unauthorized } from "@/lib/http";
 import {
   appendJournalArticle,
   deleteJournalArticle,
   reorderJournalArticles,
+  updateJournalArticle,
   type JournalWriteError,
 } from "@/lib/journal-store";
 
@@ -38,6 +39,16 @@ export async function PUT(request: Request) {
     return Response.json({ ok: false, error: result.error }, { status: STATUS[result.error] });
   }
   return Response.json({ ok: true });
+}
+
+export async function PATCH(request: Request) {
+  if (!hasBearer(request, "ADMIN_API_TOKEN")) return unauthorized();
+  const body = (await request.json().catch(() => null)) as { slug?: unknown; article?: unknown } | null;
+  const result = await updateJournalArticle(body?.slug, body?.article);
+  if (!result.ok) {
+    return Response.json({ ok: false, error: result.error }, { status: STATUS[result.error] });
+  }
+  return Response.json({ ok: true, slug: result.article.slug });
 }
 
 export async function DELETE(request: Request) {

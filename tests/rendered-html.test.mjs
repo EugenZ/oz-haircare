@@ -366,10 +366,12 @@ test("journal admin previews drafts and links to published articles", async () =
   ]);
   assert.match(form, /className="journal-admin-preview"/);
   assert.match(form, /<ArticleBody body=\{previewBody\} \/>/);
-  assert.match(form, /onChange=\{\(event\) => setDraft\(readDraft\(event\.currentTarget\)\)\}/);
+  assert.match(form, /setDraft\(readDraft\(event\.currentTarget\)\)/);
   assert.match(form, /setPreviewLang\(lang\)/);
   assert.match(dashboard, /className="journal-admin-open"/);
   assert.match(dashboard, /href=\{journalArticlePath\(entry\.slug\)\}/);
+  assert.match(dashboard, /onClick=\{\(\) => setEditingArticle\(entry\)\}/);
+  assert.match(dashboard, /initialArticle=\{editingArticle\}/);
 });
 
 test("the about carousel photo follows the pointer while it is dragged", async () => {
@@ -1005,6 +1007,72 @@ test("journal admin key creates, reorders, and deletes entries", async () => {
     restore();
     rmSync(dir, { recursive: true, force: true });
     assert.equal(readFileSync(new URL("../content/journal.json", import.meta.url)).equals(realCatalog), true);
+  }
+});
+
+test("journal edits require the admin key and preserve article URLs and order", async () => {
+  const article = {
+    slug: "edit-me",
+    tag: { ru: "Уход", en: "Care" },
+    title: { ru: "Заголовок", en: "Title" },
+    text: { ru: "Описание", en: "Teaser" },
+    time: { ru: "3 минуты", en: "3 min" },
+    byline: { ru: "Автор", en: "Author" },
+    body: { ru: ["Старый текст."], en: ["Old text."] },
+  };
+  const untouched = { ...article, slug: "leave-me" };
+  const updated = {
+    ...article,
+    title: { ru: "Новый заголовок", en: "New title" },
+    byline: { ru: "Новый автор", en: "New author" },
+    body: { ru: ["Новый текст."], en: ["New text."] },
+  };
+  const dir = mkdtempSync(join(tmpdir(), "oz-journal-edit-"));
+  const catalogPath = join(dir, "journal.json");
+  writeFileSync(catalogPath, JSON.stringify({ articles: [untouched, article] }));
+  const restore = withEnv({ ADMIN_API_TOKEN: "admin-secret", JOURNAL_CATALOG_PATH: catalogPath });
+  const headers = { "content-type": "application/json", authorization: "Bearer admin-secret" };
+  const patch = (slug, next, customHeaders = headers) => callApi("/api/journal", {
+    method: "PATCH",
+    headers: customHeaders,
+    body: JSON.stringify({ slug, article: next }),
+  });
+  const articles = () => JSON.parse(readFileSync(catalogPath, "utf8")).articles;
+
+  try {
+    assert.equal((await patch(article.slug, updated, { "content-type": "application/json" })).status, 401);
+    assert.equal((await patch(article.slug, updated, { ...headers, authorization: "Bearer wrong" })).status, 401);
+    assert.equal((await patch(article.slug, { ...updated, slug: "renamed" })).status, 400);
+    assert.equal((await patch(article.slug, { ...updated, title: { ru: "", en: "Title" } })).status, 400);
+    assert.equal((await patch("missing", { ...updated, slug: "missing" })).status, 404);
+    assert.deepEqual(articles(), [untouched, article]);
+
+    assert.equal((await patch(article.slug, updated)).status, 200);
+    assert.deepEqual(articles(), [untouched, updated]);
+    const russian = await (await render("/journal/edit-me")).text();
+    const english = await (await render("/journal/edit-me?lang=en")).text();
+    assert.match(russian, /Новый заголовок/);
+    assert.match(russian, /Новый текст\./);
+    assert.match(english, /New title/);
+    assert.match(english, /New text\./);
+
+    const russianOnly = {
+      ...updated,
+      tag: { ru: "Уход", en: "" },
+      title: { ru: "Только по-русски", en: "" },
+      text: { ru: "Описание", en: "" },
+      time: { ru: "3 минуты", en: "" },
+      byline: { ru: "Автор", en: "" },
+      body: { ru: ["Русский текст."], en: [] },
+    };
+    assert.equal((await patch(article.slug, russianOnly)).status, 200);
+    assert.deepEqual(articles(), [untouched, russianOnly]);
+    const fallback = await (await render("/journal/edit-me?lang=en")).text();
+    assert.match(fallback, /Только по-русски/);
+    assert.match(fallback, /This article is not yet available in English/);
+  } finally {
+    restore();
+    rmSync(dir, { recursive: true, force: true });
   }
 });
 
