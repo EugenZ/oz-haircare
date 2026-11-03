@@ -20,8 +20,8 @@ function localized(value: unknown, max: number): Localized | null {
 
 function paragraphs(value: unknown): string[] | null {
   if (!Array.isArray(value) || value.length === 0 || value.length > 40) return null;
-  const lines = value.map((line) => String(line ?? "").trim());
-  if (lines.some((line) => !line || line.length > 8000)) return null;
+  const lines = value.map((line) => String(line ?? ""));
+  if (lines.some((line) => !line.trim()) || lines.reduce((total, line) => total + line.length, 0) > 320000) return null;
   return lines;
 }
 

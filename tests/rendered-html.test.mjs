@@ -39,14 +39,14 @@ const importLib = (name) => import(new URL(`../lib/${name}.ts`, import.meta.url)
 const projectRoot = new URL("../", import.meta.url);
 const designSystemRoot = new URL("../opendesign/root-ritual/", import.meta.url);
 
-async function render(pathname = "/") {
+async function render(pathname = "/", userAgent) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
     new Request(`http://localhost${pathname}`, {
-      headers: { accept: "text/html" },
+      headers: { accept: "text/html", ...(userAgent ? { "user-agent": userAgent } : {}) },
     }),
     {
       ASSETS: {
@@ -153,6 +153,14 @@ test("renders a full journal article page from content/journal.json", async () =
   assert.match(html, /Ольга · трихолог OZ SPA/);
 });
 
+test("sends article metadata in the document head for browser requests", async () => {
+  const response = await render("/journal/why-hair-loses-freshness?lang=en", "Mozilla/5.0");
+  assert.equal(response.status, 200);
+  const [head, body] = (await response.text()).split("</head>");
+  assert.match(head, /<title>Why hair loses freshness so quickly · OZ SPA<\/title>/);
+  assert.doesNotMatch(body, /<title>/);
+});
+
 test("renders home and journal from the bundled catalog when neither the database nor the file is readable", async () => {
   const restore = withEnv({
     JOURNAL_CATALOG_PATH: join(tmpdir(), "oz-journal-missing", "journal.json"),
@@ -186,6 +194,7 @@ test("journal articles share the home header and its RU / EN switch", async () =
   assert.equal(stripHrefs(languageSwitch(article)), stripHrefs(languageSwitch(home)));
   assert.match(languageSwitch(article), /<a class="is-active" href="\/journal\/why-hair-loses-freshness" hrefLang="ru"/);
   assert.match(languageSwitch(article), /href="\/journal\/why-hair-loses-freshness\?lang=en" hrefLang="en"/);
+  assert.match(article, /<button class="menu-toggle"[^>]*aria-label="Меню"/);
 });
 
 test("renders the home page and journal articles in English via ?lang=en", async () => {
@@ -201,6 +210,7 @@ test("renders the home page and journal articles in English via ?lang=en", async
   assert.match(article, /<title>Why hair loses freshness so quickly · OZ SPA<\/title>/);
   assert.match(article, /<div lang="en"><p class="eyebrow">/);
   assert.match(article, /<h1>Why hair loses freshness so quickly<\/h1>/);
+  assert.match(article, /<button class="menu-toggle"[^>]*aria-label="Menu"/);
   assert.match(article, /Olga · OZ SPA trichologist/);
   assert.match(article, /Reading time/);
   assert.doesNotMatch(article, /Почему волосы быстро теряют свежесть|article-language-note/);
@@ -783,6 +793,68 @@ test("protects the bookings inbox with ADMIN_API_TOKEN", async () => {
     assert.ok(Array.isArray((await right.json()).bookings));
   } finally {
     restore();
+  }
+});
+
+test("journal saves and displays article body whitespace in both languages", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "oz-journal-whitespace-"));
+  const catalogPath = join(dir, "journal.json");
+  writeFileSync(catalogPath, JSON.stringify({ articles: [] }));
+  const restore = withEnv({ ADMIN_API_TOKEN: "admin-secret", JOURNAL_CATALOG_PATH: catalogPath });
+  const headers = { "content-type": "application/json", authorization: "Bearer admin-secret" };
+  const body = {
+    ru: ["  Введение\n• Первый пункт\n• Второй пункт\n\n\n  Конец  \n"],
+    en: ["  Introduction\n• First item\n• Second item\n\n\n  End  \n"],
+  };
+  const article = {
+    slug: "formatting-test",
+    tag: { ru: "Уход", en: "Care" },
+    title: { ru: "Форматирование", en: "Formatting" },
+    text: { ru: "Описание", en: "Description" },
+    time: { ru: "5 минут", en: "5 min" },
+    body,
+  };
+  try {
+    const response = await callApi("/api/journal", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(article),
+    });
+    assert.equal(response.status, 201);
+    const saved = JSON.parse(readFileSync(catalogPath, "utf8")).articles[0];
+    assert.deepEqual(saved.body, body);
+
+    for (const [lang, value] of Object.entries(body)) {
+      const page = await render(`/journal/formatting-test?lang=${lang}`);
+      assert.equal(page.status, 200);
+      assert.ok((await page.text()).includes(`<p>${value[0]}</p>`));
+    }
+    const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+    assert.match(css, /\.article-body p \{[^}]*white-space:\s*pre-wrap\b/);
+
+    const blank = await callApi("/api/journal", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ ...article, slug: "blank", body: { ...body, ru: [" \n\t "] } }),
+    });
+    assert.equal(blank.status, 400);
+
+    const longArticle = await callApi("/api/journal", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ ...article, slug: "long", body: { ...body, ru: ["а".repeat(9000)] } }),
+    });
+    assert.equal(longArticle.status, 201);
+
+    const oversized = await callApi("/api/journal", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ ...article, slug: "oversized", body: { ...body, ru: ["а".repeat(320001)] } }),
+    });
+    assert.equal(oversized.status, 400);
+  } finally {
+    restore();
+    rmSync(dir, { recursive: true, force: true });
   }
 });
 

@@ -73,6 +73,7 @@ export function SiteHeader({
       <button
         className="menu-toggle"
         type="button"
+        aria-label={menuOpen ? t.nav.close : t.nav.menu}
         aria-expanded={menuOpen}
         aria-controls="main-navigation"
         onClick={() => setMenuOpen((open) => !open)}

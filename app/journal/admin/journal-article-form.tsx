@@ -9,11 +9,8 @@ const defaultByline = {
   en: "Olga · OZ SPA trichologist",
 };
 
-function splitParagraphs(value: string): string[] {
-  return value
-    .split(/\n{2,}/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+function articleBody(value: string): string[] {
+  return value.trim() ? [value] : [];
 }
 
 function buildArticle(form: {
@@ -37,8 +34,8 @@ function buildArticle(form: {
     time: { ru: form.timeRu.trim(), en: form.timeEn.trim() },
     byline: defaultByline,
     body: {
-      ru: splitParagraphs(form.bodyRu),
-      en: splitParagraphs(form.bodyEn),
+      ru: articleBody(form.bodyRu),
+      en: articleBody(form.bodyEn),
     },
   };
 }
@@ -203,7 +200,7 @@ export function JournalArticleForm({
           </div>
         </label>
         <label>
-          <span>Body (RU) — paragraphs separated by a blank line</span>
+          <span>Body (RU) — line breaks and spacing are preserved</span>
           <textarea name="bodyRu" rows={8} required />
         </label>
         <label>

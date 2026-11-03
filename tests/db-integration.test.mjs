@@ -13,8 +13,10 @@
 // which `npm run test:db` sets — DATABASE_URL from the ignored .env.local.
 // Google Calendar and Resend are stubbed via fetch; any other HTTP call fails.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { registerHooks } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
 
 registerHooks({
@@ -252,6 +254,40 @@ describe("booking lifecycle on a real Postgres schema", { skip }, () => {
     assert.equal(id, body.id);
     return { id, token, body };
   }
+
+  test("journal article body whitespace survives Postgres and page rendering", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "oz-journal-db-"));
+    const previousCatalog = process.env.JOURNAL_CATALOG_PATH;
+    process.env.JOURNAL_CATALOG_PATH = join(dir, "journal.json");
+    const article = {
+      slug: "journal-whitespace-test",
+      tag: { ru: "Уход", en: "Care" },
+      title: { ru: "Форматирование", en: "Formatting" },
+      text: { ru: "Описание", en: "Description" },
+      time: { ru: "5 минут", en: "5 min" },
+      body: {
+        ru: ["  Введение\n• Первый пункт\n• Второй пункт\n\n  Конец  \n"],
+        en: ["  Introduction\n• First item\n• Second item\n\n  End  \n"],
+      },
+    };
+    try {
+      const response = await postJson("/api/journal", article, { authorization: `Bearer ${ADMIN_TOKEN}` });
+      assert.equal(response.status, 201);
+      const { rows } = await scoped.query("select document from journal_articles where slug = $1", [article.slug]);
+      assert.equal(rows.length, 1);
+      assert.deepEqual(rows[0].document.body, article.body);
+
+      for (const [lang, value] of Object.entries(article.body)) {
+        const page = await call(`/journal/${article.slug}?lang=${lang}`);
+        assert.equal(page.status, 200);
+        assert.ok((await page.text()).includes(`<p>${value[0]}</p>`));
+      }
+    } finally {
+      if (previousCatalog === undefined) delete process.env.JOURNAL_CATALOG_PATH;
+      else process.env.JOURNAL_CATALOG_PATH = previousCatalog;
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 
   test("submit stores a pending booking and emails Olga a manage link", async () => {
     const mark = calls.emails.length;

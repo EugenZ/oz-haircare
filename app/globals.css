@@ -279,9 +279,10 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .article-page-content { padding: 0 6vw 72px; }
 .article-language-note { border-left: 2px solid var(--clay); color: var(--ink-soft); font-size: 13px; line-height: 1.55; margin: 0 0 28px; padding-left: 14px; }
 .article-read { margin: 0 auto; max-width: 42rem; }
-.article-read h1 { font-family: var(--display); font-size: clamp(36px, 5.5vw, 56px); font-weight: 400; letter-spacing: -.04em; line-height: 1.02; margin: 18px 0 22px; }
+article.article-read .eyebrow { color: var(--accent-active); }
+.article-read h1 { font-family: var(--display); font-size: clamp(36px, 5.5vw, 56px); font-weight: 400; letter-spacing: -.04em; line-height: 1.02; margin: 18px 0 22px; overflow-wrap: anywhere; }
 .article-byline { color: var(--ink-soft); font-size: 13px; letter-spacing: .02em; line-height: 1.5; margin: 0 0 36px; }
-.article-body p { color: var(--ink); font-size: 17px; letter-spacing: -.01em; line-height: 1.72; margin: 0 0 1.35em; max-width: 38rem; }
+.article-body p { color: var(--ink); font-size: 17px; letter-spacing: -.01em; line-height: 1.72; margin: 0 0 1.35em; max-width: 38rem; overflow-wrap: anywhere; white-space: pre-wrap; }
 .article-body p:last-child { margin-bottom: 0; }
 .article-back { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 28px; }
 .journal-admin-lead { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin: 0 0 28px; max-width: 38rem; }
@@ -317,6 +318,7 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 @media (max-width: 650px) {
   .journal-admin-pair { grid-template-columns: 1fr; }
   .article-page-content { padding-bottom: 56px; }
+  .article-read h1 { font-size: clamp(30px, 10vw, 36px); }
 }
 
 .site-footer { align-items: center; background: var(--cream); display: grid; gap: 20px; grid-template-columns: 1.4fr 1fr .7fr .8fr; padding-bottom: 28px; padding-top: 28px; }
