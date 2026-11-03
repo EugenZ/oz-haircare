@@ -285,6 +285,105 @@ test("shows a Russian-only journal article with a note when English is requested
   }
 });
 
+test("parses headings, lists, line breaks and bold in article bodies", tsOnly, async () => {
+  const { parseArticleBlocks, parseInline } = await importLib("article-format");
+  assert.deepEqual(
+    parseArticleBlocks([
+      "## Как проводить ритуал?",
+      "Первая строка.\nВторая строка.",
+      "1. Нанесите масло.\n2. Сделайте массаж.",
+      "* смягчить кожу;\n- уменьшить сухость;\nВажно помнить: это не лечение.",
+      "Абзац\n\nещё абзац",
+    ]),
+    [
+      { type: "heading", level: 2, text: "Как проводить ритуал?" },
+      { type: "paragraph", lines: ["Первая строка.", "Вторая строка."] },
+      { type: "list", ordered: true, start: 1, items: ["Нанесите масло.", "Сделайте массаж."] },
+      { type: "list", ordered: false, start: 1, items: ["смягчить кожу;", "уменьшить сухость;"] },
+      { type: "paragraph", lines: ["Важно помнить: это не лечение."] },
+      { type: "paragraph", lines: ["Абзац"] },
+      { type: "paragraph", lines: ["ещё абзац"] },
+    ],
+  );
+  assert.deepEqual(parseInline("a **b** c"), [
+    { text: "a ", bold: false },
+    { text: "b", bold: true },
+    { text: " c", bold: false },
+  ]);
+});
+
+test("renders formatted article bodies and links to the neighbouring articles", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "oz-journal-format-"));
+  const catalogPath = join(dir, "journal.json");
+  const entry = (slug, title, body) => ({
+    slug,
+    tag: { ru: "Волосы", en: "Hair" },
+    title: { ru: title, en: `${title} EN` },
+    text: { ru: "Анонс", en: "Teaser" },
+    time: { ru: "3 минуты", en: "3 min" },
+    byline: { ru: "Ольга · трихолог OZ SPA", en: "Olga · OZ SPA trichologist" },
+    body: { ru: body, en: body },
+  });
+  writeFileSync(
+    catalogPath,
+    JSON.stringify({
+      articles: [
+        entry("first", "Первая", ["Текст."]),
+        entry("middle", "Средняя", [
+          "## Что даёт замасливание?",
+          "Строка один\nстрока два с **акцентом**",
+          "3. Оставьте на ночь.\n4. Вымойте голову.",
+          "* смягчить кожу;\n* уменьшить сухость;",
+        ]),
+        entry("last", "Последняя", ["Текст."]),
+      ],
+    }),
+  );
+  const restore = withEnv({ JOURNAL_CATALOG_PATH: catalogPath });
+  try {
+    const html = await (await render("/journal/middle")).text();
+    assert.match(html, /<h2>Что даёт замасливание\?<\/h2>/);
+    assert.match(html, /<p>Строка один<br\/>строка два с <strong>акцентом<\/strong><\/p>/);
+    assert.match(html, /<ol start="3"><li>Оставьте на ночь\.<\/li><li>Вымойте голову\.<\/li><\/ol>/);
+    assert.match(html, /<ul><li>смягчить кожу;<\/li><li>уменьшить сухость;<\/li><\/ul>/);
+    assert.match(html, /<nav class="article-pager" aria-label="Другие статьи журнала">/);
+    assert.match(html, /href="\/journal\/first"[^>]*>.*Предыдущая статья.*Первая<\/span>/);
+    assert.match(html, /href="\/journal\/last"[^>]*>.*Следующая статья.*Последняя<\/span>/);
+
+    const english = await (await render("/journal/first?lang=en")).text();
+    assert.match(english, /href="\/journal\/middle\?lang=en"[^>]*>.*Next article.*Средняя EN<\/span>/);
+    assert.doesNotMatch(english, /Previous article/);
+  } finally {
+    restore();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("journal admin previews drafts and links to published articles", async () => {
+  const [form, dashboard] = await Promise.all([
+    readFile(new URL("app/journal/admin/journal-article-form.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/journal/admin/journal-admin-dashboard.tsx", projectRoot), "utf8"),
+  ]);
+  assert.match(form, /className="journal-admin-preview"/);
+  assert.match(form, /<ArticleBody body=\{previewBody\} \/>/);
+  assert.match(form, /onChange=\{\(event\) => setDraft\(readDraft\(event\.currentTarget\)\)\}/);
+  assert.match(form, /setPreviewLang\(lang\)/);
+  assert.match(dashboard, /className="journal-admin-open"/);
+  assert.match(dashboard, /href=\{journalArticlePath\(entry\.slug\)\}/);
+});
+
+test("the about carousel photo follows the pointer while it is dragged", async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL("app/home-client.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/globals.css", projectRoot), "utf8"),
+  ]);
+  assert.match(page, /onPointerMove=\{handleAboutPointerMove\}/);
+  assert.match(page, /style\.setProperty\("--dx"/);
+  assert.match(css, /\.about-photo\.is-active \{ transform: translateX\(var\(--dx, 0px\)\)/);
+  assert.match(css, /\.about-photo\.is-dragging \{ transition: none; \}/);
+  assert.match(css, /\.about-photos \{[^}]*touch-action: pan-y/);
+});
+
 test("keeps core client interactions wired", async () => {
   const [page, header, css] = await Promise.all([
     readFile(new URL("app/home-client.tsx", projectRoot), "utf8"),
