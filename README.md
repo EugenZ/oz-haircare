@@ -32,6 +32,12 @@ npm ci
 
 `npm ci` installs the exact versions recorded in `package-lock.json`. Use `npm install` only when you intend to change dependencies.
 
+## Codex worktrees
+
+When starting a new Codex chat, choose **Worktree** and the **ROOT / RITUAL** local environment. Its setup script runs `npm ci`. Its cleanup hook is configured to run `scripts/worktree-cleanup.sh`, which removes `node_modules` and generated build output from that worktree.
+
+Run either script manually from the repository root with `./scripts/worktree-setup.sh` or `./scripts/worktree-cleanup.sh`.
+
 ### 3. Start the development server
 
 ```bash
@@ -51,6 +57,13 @@ npm test
 ```bash
 npm run build
 npm run start
+```
+
+To test journal navigation in a browser against the local production Worker:
+
+```bash
+npx playwright install chromium
+npm run test:browser
 ```
 
 ## OpenDesign

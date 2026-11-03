@@ -41,4 +41,7 @@ yarn-error.log*
 
 # graphify generated cache + agent tooling (regenerable, not part of the app)
 /graphify-out/
-/.codex/
+/.codex/*
+!/.codex/environments/
+/.codex/environments/*
+!/.codex/environments/environment.toml
