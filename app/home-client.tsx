@@ -936,13 +936,6 @@ const certificates: AboutPhoto[] = [
     },
   },
   {
-    src: "/certificates/expert-2.webp",
-    alt: {
-      ru: "Диплом Mini MBA и приложение с программой обучения",
-      en: "Mini MBA diploma and training program supplement",
-    },
-  },
-  {
     src: "/certificates/scalp-peelings.webp",
     alt: {
       ru: "Сертификат Expert X по пилингам кожи головы",

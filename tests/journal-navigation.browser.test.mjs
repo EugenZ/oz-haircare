@@ -173,7 +173,6 @@ for (const locale of locales) {
       "hair-master-certificate.jpg",
       "expert-1.webp",
       "expert-3.webp",
-      "expert-2.webp",
       "scalp-peelings.webp",
       "cold-reconstruction.webp",
       "collagen-restoration.webp",
@@ -182,6 +181,7 @@ for (const locale of locales) {
     const image = slider.locator(".certificate-image");
     const view = slider.getByRole("link", { name: labels.view });
     await slider.scrollIntoViewIfNeeded();
+    assert.equal(await slider.locator(".about-slider-dots button").count(), images.length);
 
     const placement = await page.evaluate(() => {
       const section = document.querySelector("#certificates");
