@@ -183,6 +183,26 @@ for (const locale of locales) {
     const view = slider.getByRole("link", { name: labels.view });
     await slider.scrollIntoViewIfNeeded();
 
+    const placement = await page.evaluate(() => {
+      const section = document.querySelector("#certificates");
+      const heading = section.querySelector("h2");
+      const range = document.createRange();
+      range.selectNodeContents(heading);
+      const headingBox = range.getBoundingClientRect();
+      const galleryBox = section.querySelector(".certificate-slider").getBoundingClientRect();
+      return {
+        followsBooking: section.previousElementSibling?.id === "booking",
+        precedesFooter: section.nextElementSibling?.matches("footer.site-footer"),
+        headingCenter: headingBox.x + headingBox.width / 2,
+        galleryCenter: galleryBox.x + galleryBox.width / 2,
+        pageCenter: window.innerWidth / 2,
+      };
+    });
+    assert.equal(placement.followsBooking, true);
+    assert.equal(placement.precedesFooter, true);
+    assert.ok(Math.abs(placement.headingCenter - placement.pageCenter) < 1);
+    assert.ok(Math.abs(placement.galleryCenter - placement.pageCenter) < 1);
+
     for (const [index, name] of images.entries()) {
       const path = `/certificates/${name}`;
       await page.waitForFunction((src) => {

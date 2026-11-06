@@ -1625,68 +1625,6 @@ export default function Home({
             </div>
           </div>
         </div>
-        <div className="certificates">
-          <h3>{t.about.certificatesTitle}</h3>
-          {certificate ? (
-            <div
-              className="about-slider certificate-slider"
-              role="region"
-              aria-roledescription="carousel"
-              aria-label={t.about.certificatesTitle}
-              onPointerDown={handleCertificatePointerDown}
-              onPointerUp={handleCertificatePointerUp}
-              onPointerCancel={() => {
-                certificateSwipeStart.current = null;
-              }}
-            >
-              <img
-                key={certificate.src}
-                src={certificate.src}
-                alt={certificate.alt[language]}
-                className="certificate-image"
-                style={{ objectPosition: certificate.position ?? "center" }}
-                loading="lazy"
-                draggable={false}
-              />
-              {hasCertificates ? (
-                <div className="certificate-controls">
-                  <button
-                    type="button"
-                    className="about-slider-btn about-slider-prev"
-                    aria-label={t.about.prevCertificate}
-                    onClick={() => showCertificate(certificateIndex - 1)}
-                  >
-                    <span aria-hidden="true">‹</span>
-                  </button>
-                  <div className="about-slider-dots">
-                    {certificates.map((item, index) => (
-                      <button
-                        key={item.src}
-                        type="button"
-                        className={index === certificateIndex ? "is-active" : ""}
-                        aria-label={`${t.about.certificate} ${index + 1}`}
-                        aria-current={index === certificateIndex ? "true" : undefined}
-                        onClick={() => showCertificate(index)}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    className="about-slider-btn about-slider-next"
-                    aria-label={t.about.nextCertificate}
-                    onClick={() => showCertificate(certificateIndex + 1)}
-                  >
-                    <span aria-hidden="true">›</span>
-                  </button>
-                </div>
-              ) : null}
-              <p className="certificate-caption" aria-live="polite">{certificate.alt[language]}</p>
-              <a className="text-link certificate-view" href={certificate.src} target="_blank" rel="noopener noreferrer">
-                {t.about.viewCertificate}<span aria-hidden="true">↗</span>
-              </a>
-            </div>
-          ) : null}
-        </div>
         <div className="process-row">
           <div className="process-label">{t.about.processLabel}</div>
           {t.about.process.map((step, index) => (
@@ -2088,6 +2026,69 @@ export default function Home({
             </form>
           )}
         </div>
+      </section>
+
+      <section className="certificates section-pad" id="certificates">
+        <h2>{t.about.certificatesTitle}</h2>
+        {certificate ? (
+          <div
+            className="about-slider certificate-slider"
+            role="region"
+            aria-roledescription="carousel"
+            aria-label={t.about.certificatesTitle}
+            onPointerDown={handleCertificatePointerDown}
+            onPointerUp={handleCertificatePointerUp}
+            onPointerCancel={() => {
+              certificateSwipeStart.current = null;
+            }}
+          >
+            <img
+              key={certificate.src}
+              src={certificate.src}
+              alt={certificate.alt[language]}
+              className="certificate-image"
+              style={{ objectPosition: certificate.position ?? "center" }}
+              loading="lazy"
+              draggable={false}
+            />
+            {hasCertificates ? (
+              <div className="certificate-controls">
+                <button
+                  type="button"
+                  className="about-slider-btn about-slider-prev"
+                  aria-label={t.about.prevCertificate}
+                  onClick={() => showCertificate(certificateIndex - 1)}
+                >
+                  <span aria-hidden="true">‹</span>
+                </button>
+                <div className="about-slider-dots">
+                  {certificates.map((item, index) => (
+                    <button
+                      key={item.src}
+                      type="button"
+                      className={index === certificateIndex ? "is-active" : ""}
+                      aria-label={`${t.about.certificate} ${index + 1}`}
+                      aria-current={index === certificateIndex ? "true" : undefined}
+                      onClick={() => showCertificate(index)}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="about-slider-btn about-slider-next"
+                  aria-label={t.about.nextCertificate}
+                  onClick={() => showCertificate(certificateIndex + 1)}
+                >
+                  <span aria-hidden="true">›</span>
+                </button>
+              </div>
+            ) : null}
+            <p className="certificate-caption" aria-live="polite">{certificate.alt[language]}</p>
+            <a className="text-link certificate-view" href={certificate.src} target="_blank" rel="noopener noreferrer">
+              {t.about.viewCertificate}<span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        ) : null}
       </section>
 
       <footer className="site-footer section-pad">
