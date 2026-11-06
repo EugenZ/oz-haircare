@@ -197,6 +197,10 @@ for (const locale of locales) {
       const sectionBackground = getComputedStyle(section).backgroundColor;
       const galleryBackground = getComputedStyle(section.querySelector(".certificate-slider")).backgroundColor;
       const imageBackground = getComputedStyle(section.querySelector(".certificate-image")).backgroundColor;
+      const typography = (element) => {
+        const style = getComputedStyle(element);
+        return [style.fontFamily, style.fontSize, style.fontWeight, style.letterSpacing, style.lineHeight];
+      };
       return {
         followsBooking: section.previousElementSibling?.id === "booking",
         precedesFooter: section.nextElementSibling?.matches("footer.site-footer"),
@@ -205,6 +209,8 @@ for (const locale of locales) {
         pageCenter: window.innerWidth / 2,
         galleryMatchesSection: ["rgba(0, 0, 0, 0)", sectionBackground].includes(galleryBackground),
         imageMatchesSection: ["rgba(0, 0, 0, 0)", sectionBackground].includes(imageBackground),
+        headingTypography: typography(heading),
+        sectionHeadingTypography: typography(document.querySelector("#services .section-intro h2")),
       };
     });
     assert.equal(placement.followsBooking, true);
@@ -213,6 +219,7 @@ for (const locale of locales) {
     assert.ok(Math.abs(placement.galleryCenter - placement.pageCenter) < 1);
     assert.equal(placement.galleryMatchesSection, true);
     assert.equal(placement.imageMatchesSection, true);
+    assert.deepEqual(placement.headingTypography, placement.sectionHeadingTypography);
 
     for (const [index, name] of images.entries()) {
       const path = `/certificates/${name}`;
