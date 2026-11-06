@@ -151,4 +151,72 @@ for (const locale of locales) {
     await expectNavigation(page, nextPath);
     await page.getByRole("heading", { level: 1, name: second.title[locale.code], exact: true }).waitFor();
   });
+
+  test(`${locale.code}: browse certificates and open a full-size document`, async (t) => {
+    const page = await browser.newPage({
+      viewport: locale.code === "ru" ? { width: 320, height: 844 } : { width: 1280, height: 900 },
+    });
+    t.after(() => page.close());
+    if (locale.code === "ru") {
+      await openReadyPage(page, `/${locale.query}`);
+    } else {
+      const response = await page.goto(`${baseUrl}/${locale.query}`);
+      assert.equal(response.status(), 200);
+      await page.waitForLoadState("networkidle");
+    }
+
+    const labels = locale.code === "ru"
+      ? { region: "Мои дипломы и сертификаты", next: "Следующий документ", previous: "Предыдущий документ", document: "Документ", view: "Открыть в полном размере" }
+      : { region: "My diplomas and certificates", next: "Next document", previous: "Previous document", document: "Document", view: "View full size" };
+    const images = [
+      "hair-master-diploma.jpg",
+      "hair-master-certificate.jpg",
+      "expert-1.webp",
+      "expert-3.webp",
+      "expert-2.webp",
+      "scalp-peelings.webp",
+      "cold-reconstruction.webp",
+      "collagen-restoration.webp",
+    ];
+    const slider = page.getByRole("region", { name: labels.region });
+    const image = slider.locator(".certificate-image");
+    const view = slider.getByRole("link", { name: labels.view });
+    await slider.scrollIntoViewIfNeeded();
+
+    for (const [index, name] of images.entries()) {
+      const path = `/certificates/${name}`;
+      await page.waitForFunction((src) => {
+        const image = document.querySelector(".certificate-image");
+        return image?.getAttribute("src") === src && image.complete && image.naturalWidth > 0;
+      }, path);
+      assert.equal(await view.getAttribute("href"), path);
+      assert.ok(await image.getAttribute("alt"));
+      assert.equal(await slider.getByRole("button", { name: `${labels.document} ${index + 1}`, exact: true }).getAttribute("aria-current"), "true");
+      await slider.getByRole("button", { name: labels.next }).click();
+    }
+
+    await image.scrollIntoViewIfNeeded();
+    const dragBox = await image.boundingBox();
+    assert.ok(dragBox);
+    await page.mouse.move(dragBox.x + dragBox.width * 0.8, dragBox.y + dragBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(dragBox.x + dragBox.width * 0.2, dragBox.y + dragBox.height / 2);
+    await page.mouse.up();
+    assert.equal(await image.getAttribute("src"), `/certificates/${images[1]}`);
+    await slider.getByRole("button", { name: labels.previous }).click();
+    await slider.getByRole("button", { name: labels.previous }).click();
+    assert.equal(await image.getAttribute("src"), `/certificates/${images.at(-1)}`);
+    await slider.getByRole("button", { name: `${labels.document} 4`, exact: true }).focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await image.getAttribute("src"), `/certificates/${images[3]}`);
+    const imageBox = await image.boundingBox();
+    const controlsBox = await slider.locator(".certificate-controls").boundingBox();
+    assert.ok(imageBox && controlsBox && controlsBox.y >= imageBox.y + imageBox.height);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+
+    const [popup] = await Promise.all([page.waitForEvent("popup"), view.click()]);
+    await popup.waitForLoadState("load");
+    assert.equal(new URL(popup.url()).pathname, `/certificates/${images[3]}`);
+    await popup.close();
+  });
 }
