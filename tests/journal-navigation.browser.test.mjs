@@ -151,4 +151,127 @@ for (const locale of locales) {
     await expectNavigation(page, nextPath);
     await page.getByRole("heading", { level: 1, name: second.title[locale.code], exact: true }).waitFor();
   });
+
+  test(`${locale.code}: certificate heading stays on one line when it fits`, async (t) => {
+    const page = await browser.newPage({ viewport: { width: 583, height: 844 } });
+    t.after(() => page.close());
+    const response = await page.goto(`${baseUrl}/${locale.query}`);
+    assert.equal(response.status(), 200);
+    await page.waitForLoadState("networkidle");
+
+    const heading = page.locator("#certificates h2");
+    assert.equal(await heading.textContent(), locale.code === "ru" ? "Дипломы и сертификаты" : "Diplomas and Certificates");
+    const lineCount = await heading.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return range.getClientRects().length;
+    });
+    assert.equal(lineCount, 1);
+  });
+
+  test(`${locale.code}: browse certificates and open a full-size document`, async (t) => {
+    const page = await browser.newPage({
+      viewport: locale.code === "ru" ? { width: 320, height: 844 } : { width: 1280, height: 900 },
+    });
+    t.after(() => page.close());
+    if (locale.code === "ru") {
+      await openReadyPage(page, `/${locale.query}`);
+    } else {
+      const response = await page.goto(`${baseUrl}/${locale.query}`);
+      assert.equal(response.status(), 200);
+      await page.waitForLoadState("networkidle");
+    }
+
+    const labels = locale.code === "ru"
+      ? { region: "Дипломы и сертификаты", next: "Следующий документ", previous: "Предыдущий документ", document: "Документ", view: "Открыть в полном размере" }
+      : { region: "Diplomas and Certificates", next: "Next document", previous: "Previous document", document: "Document", view: "View full size" };
+    const images = [
+      "hair-master-diploma.jpg",
+      "hair-master-certificate.jpg",
+      "expert-1.webp",
+      "expert-3.webp",
+      "scalp-peelings.webp",
+      "cold-reconstruction.webp",
+      "collagen-restoration.webp",
+    ];
+    const slider = page.getByRole("region", { name: labels.region });
+    const image = slider.locator(".certificate-image");
+    const view = slider.getByRole("link", { name: labels.view });
+    await slider.scrollIntoViewIfNeeded();
+    assert.equal(await slider.locator(".about-slider-dots button").count(), images.length);
+    const dotRows = await slider.locator(".about-slider-dots button").evaluateAll((dots) =>
+      dots.map((dot) => Math.round(dot.getBoundingClientRect().top)),
+    );
+    assert.equal(new Set(dotRows).size, 1);
+
+    const placement = await page.evaluate(() => {
+      const section = document.querySelector("#certificates");
+      const heading = section.querySelector("h2");
+      const range = document.createRange();
+      range.selectNodeContents(heading);
+      const headingBox = range.getBoundingClientRect();
+      const galleryBox = section.querySelector(".certificate-slider").getBoundingClientRect();
+      const sectionBackground = getComputedStyle(section).backgroundColor;
+      const galleryBackground = getComputedStyle(section.querySelector(".certificate-slider")).backgroundColor;
+      const imageBackground = getComputedStyle(section.querySelector(".certificate-image")).backgroundColor;
+      const typography = (element) => {
+        const style = getComputedStyle(element);
+        return [style.fontFamily, style.fontSize, style.fontWeight, style.letterSpacing, style.lineHeight];
+      };
+      return {
+        followsBooking: section.previousElementSibling?.id === "booking",
+        precedesFooter: section.nextElementSibling?.matches("footer.site-footer"),
+        headingCenter: headingBox.x + headingBox.width / 2,
+        galleryCenter: galleryBox.x + galleryBox.width / 2,
+        pageCenter: window.innerWidth / 2,
+        galleryMatchesSection: ["rgba(0, 0, 0, 0)", sectionBackground].includes(galleryBackground),
+        imageMatchesSection: ["rgba(0, 0, 0, 0)", sectionBackground].includes(imageBackground),
+        headingTypography: typography(heading),
+        sectionHeadingTypography: typography(document.querySelector("#services .section-intro h2")),
+      };
+    });
+    assert.equal(placement.followsBooking, true);
+    assert.equal(placement.precedesFooter, true);
+    assert.ok(Math.abs(placement.headingCenter - placement.pageCenter) < 1);
+    assert.ok(Math.abs(placement.galleryCenter - placement.pageCenter) < 1);
+    assert.equal(placement.galleryMatchesSection, true);
+    assert.equal(placement.imageMatchesSection, true);
+    assert.deepEqual(placement.headingTypography, placement.sectionHeadingTypography);
+
+    for (const [index, name] of images.entries()) {
+      const path = `/certificates/${name}`;
+      await page.waitForFunction((src) => {
+        const image = document.querySelector(".certificate-image");
+        return image?.getAttribute("src") === src && image.complete && image.naturalWidth > 0;
+      }, path);
+      assert.equal(await view.getAttribute("href"), path);
+      assert.ok(await image.getAttribute("alt"));
+      assert.equal(await slider.getByRole("button", { name: `${labels.document} ${index + 1}`, exact: true }).getAttribute("aria-current"), "true");
+      await slider.getByRole("button", { name: labels.next }).click();
+    }
+
+    await image.scrollIntoViewIfNeeded();
+    const dragBox = await image.boundingBox();
+    assert.ok(dragBox);
+    await page.mouse.move(dragBox.x + dragBox.width * 0.8, dragBox.y + dragBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(dragBox.x + dragBox.width * 0.2, dragBox.y + dragBox.height / 2);
+    await page.mouse.up();
+    assert.equal(await image.getAttribute("src"), `/certificates/${images[1]}`);
+    await slider.getByRole("button", { name: labels.previous }).click();
+    await slider.getByRole("button", { name: labels.previous }).click();
+    assert.equal(await image.getAttribute("src"), `/certificates/${images.at(-1)}`);
+    await slider.getByRole("button", { name: `${labels.document} 4`, exact: true }).focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await image.getAttribute("src"), `/certificates/${images[3]}`);
+    const imageBox = await image.boundingBox();
+    const controlsBox = await slider.locator(".certificate-controls").boundingBox();
+    assert.ok(imageBox && controlsBox && controlsBox.y >= imageBox.y + imageBox.height);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+
+    const [popup] = await Promise.all([page.waitForEvent("popup"), view.click()]);
+    await popup.waitForLoadState("load");
+    assert.equal(new URL(popup.url()).pathname, `/certificates/${images[3]}`);
+    await popup.close();
+  });
 }

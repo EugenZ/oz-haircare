@@ -84,10 +84,11 @@ const copy = {
         "Без спешки. Без лишних обещаний. С вниманием к вашим волосам и результату, который мы выстраиваем последовательно.",
       ],
       signature: "ЖГИРОВА ОЛЬГА — ваш специалист по волосам",
-      certificatesTitle: "Мои дипломы и сертификаты",
+      certificatesTitle: "Дипломы и сертификаты",
       prevCertificate: "Предыдущий документ",
       nextCertificate: "Следующий документ",
       certificate: "Документ",
+      viewCertificate: "Открыть в полном размере",
       processLabel: "Как всё проходит",
       process: [
         ["Слушаем", "что изменилось и чего хочется"],
@@ -237,10 +238,11 @@ const copy = {
         "Without rush. Without extra promises. With attention to your hair, and to a result we build step by step.",
       ],
       signature: "OLGA ZHGIROVA — your hair specialist",
-      certificatesTitle: "My diplomas and certificates",
+      certificatesTitle: "Diplomas and Certificates",
       prevCertificate: "Previous document",
       nextCertificate: "Next document",
       certificate: "Document",
+      viewCertificate: "View full size",
       processLabel: "The process",
       process: [
         ["Listen", "what changed and what you want"],
@@ -904,7 +906,57 @@ const aboutPhotos: AboutPhoto[] = [
 const aboutRotations = [5, -3, 7, -6, 4, -8, 6, -4, 2];
 
 // Add a diploma or certificate by placing a file in public/ and appending it here.
-const certificates: AboutPhoto[] = [];
+const certificates: AboutPhoto[] = [
+  {
+    src: "/certificates/hair-master-diploma.jpg",
+    alt: {
+      ru: "Диплом Hair Master Ольги Жгировой, Expert X",
+      en: "Expert X Hair Master diploma awarded to Olga Zhgirova",
+    },
+  },
+  {
+    src: "/certificates/hair-master-certificate.jpg",
+    alt: {
+      ru: "Сертификат Hair Master Ольги Жгировой, Expert X",
+      en: "Expert X Hair Master certificate awarded to Olga Zhgirova",
+    },
+  },
+  {
+    src: "/certificates/expert-1.webp",
+    alt: {
+      ru: "Программа обучения Hair Master, Expert X",
+      en: "Expert X Hair Master training program",
+    },
+  },
+  {
+    src: "/certificates/expert-3.webp",
+    alt: {
+      ru: "Диплом Mini MBA по укладке, стрижке и окрашиванию волос",
+      en: "Mini MBA diploma in hair styling, cutting and color design",
+    },
+  },
+  {
+    src: "/certificates/scalp-peelings.webp",
+    alt: {
+      ru: "Сертификат Expert X по пилингам кожи головы",
+      en: "Expert X certificate in scalp peelings",
+    },
+  },
+  {
+    src: "/certificates/cold-reconstruction.webp",
+    alt: {
+      ru: "Сертификат Expert X по холодной реконструкции волос",
+      en: "Expert X certificate in cold hair reconstruction",
+    },
+  },
+  {
+    src: "/certificates/collagen-restoration.webp",
+    alt: {
+      ru: "Сертификат Expert X по коллагеновому восстановлению волос",
+      en: "Expert X certificate in collagen hair restoration",
+    },
+  },
+];
 
 function toISODate(date: Date) {
   const year = date.getFullYear();
@@ -1226,7 +1278,7 @@ export default function Home({
 
   const handleCertificatePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (!hasCertificates) return;
-    if ((event.target as HTMLElement).closest("button")) return;
+    if ((event.target as HTMLElement).closest("button, a")) return;
     certificateSwipeStart.current = event.clientX;
     event.currentTarget.setPointerCapture(event.pointerId);
   };
@@ -1565,64 +1617,6 @@ export default function Home({
               </div>
             </div>
           </div>
-        </div>
-        <div className="certificates">
-          <h3>{t.about.certificatesTitle}</h3>
-          {certificate ? (
-            <div
-              className="about-slider certificate-slider"
-              role="region"
-              aria-roledescription="carousel"
-              aria-label={t.about.certificatesTitle}
-              onPointerDown={handleCertificatePointerDown}
-              onPointerUp={handleCertificatePointerUp}
-              onPointerCancel={() => {
-                certificateSwipeStart.current = null;
-              }}
-            >
-              <img
-                key={certificate.src}
-                src={certificate.src}
-                alt={certificate.alt[language]}
-                className="certificate-image"
-                style={{ objectPosition: certificate.position ?? "center" }}
-                loading="lazy"
-                draggable={false}
-              />
-              {hasCertificates ? (
-                <>
-                  <button
-                    type="button"
-                    className="about-slider-btn about-slider-prev"
-                    aria-label={t.about.prevCertificate}
-                    onClick={() => showCertificate(certificateIndex - 1)}
-                  >
-                    <span aria-hidden="true">‹</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="about-slider-btn about-slider-next"
-                    aria-label={t.about.nextCertificate}
-                    onClick={() => showCertificate(certificateIndex + 1)}
-                  >
-                    <span aria-hidden="true">›</span>
-                  </button>
-                  <div className="about-slider-dots">
-                    {certificates.map((item, index) => (
-                      <button
-                        key={item.src}
-                        type="button"
-                        className={index === certificateIndex ? "is-active" : ""}
-                        aria-label={`${t.about.certificate} ${index + 1}`}
-                        aria-current={index === certificateIndex ? "true" : undefined}
-                        onClick={() => showCertificate(index)}
-                      />
-                    ))}
-                  </div>
-                </>
-              ) : null}
-            </div>
-          ) : null}
         </div>
         <div className="process-row">
           <div className="process-label">{t.about.processLabel}</div>
@@ -2025,6 +2019,69 @@ export default function Home({
             </form>
           )}
         </div>
+      </section>
+
+      <section className="certificates section-pad" id="certificates">
+        <h2>{t.about.certificatesTitle}</h2>
+        {certificate ? (
+          <div
+            className="about-slider certificate-slider"
+            role="region"
+            aria-roledescription="carousel"
+            aria-label={t.about.certificatesTitle}
+            onPointerDown={handleCertificatePointerDown}
+            onPointerUp={handleCertificatePointerUp}
+            onPointerCancel={() => {
+              certificateSwipeStart.current = null;
+            }}
+          >
+            <img
+              key={certificate.src}
+              src={certificate.src}
+              alt={certificate.alt[language]}
+              className="certificate-image"
+              style={{ objectPosition: certificate.position ?? "center" }}
+              loading="lazy"
+              draggable={false}
+            />
+            {hasCertificates ? (
+              <div className="certificate-controls">
+                <button
+                  type="button"
+                  className="about-slider-btn about-slider-prev"
+                  aria-label={t.about.prevCertificate}
+                  onClick={() => showCertificate(certificateIndex - 1)}
+                >
+                  <span aria-hidden="true">‹</span>
+                </button>
+                <div className="about-slider-dots">
+                  {certificates.map((item, index) => (
+                    <button
+                      key={item.src}
+                      type="button"
+                      className={index === certificateIndex ? "is-active" : ""}
+                      aria-label={`${t.about.certificate} ${index + 1}`}
+                      aria-current={index === certificateIndex ? "true" : undefined}
+                      onClick={() => showCertificate(index)}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="about-slider-btn about-slider-next"
+                  aria-label={t.about.nextCertificate}
+                  onClick={() => showCertificate(certificateIndex + 1)}
+                >
+                  <span aria-hidden="true">›</span>
+                </button>
+              </div>
+            ) : null}
+            <p className="certificate-caption" aria-live="polite">{certificate.alt[language]}</p>
+            <a className="text-link certificate-view" href={certificate.src} target="_blank" rel="noopener noreferrer">
+              {t.about.viewCertificate}<span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        ) : null}
       </section>
 
       <footer className="site-footer section-pad">
