@@ -182,6 +182,10 @@ for (const locale of locales) {
     const view = slider.getByRole("link", { name: labels.view });
     await slider.scrollIntoViewIfNeeded();
     assert.equal(await slider.locator(".about-slider-dots button").count(), images.length);
+    const dotRows = await slider.locator(".about-slider-dots button").evaluateAll((dots) =>
+      dots.map((dot) => Math.round(dot.getBoundingClientRect().top)),
+    );
+    assert.equal(new Set(dotRows).size, 1);
 
     const placement = await page.evaluate(() => {
       const section = document.querySelector("#certificates");
@@ -190,18 +194,25 @@ for (const locale of locales) {
       range.selectNodeContents(heading);
       const headingBox = range.getBoundingClientRect();
       const galleryBox = section.querySelector(".certificate-slider").getBoundingClientRect();
+      const sectionBackground = getComputedStyle(section).backgroundColor;
+      const galleryBackground = getComputedStyle(section.querySelector(".certificate-slider")).backgroundColor;
+      const imageBackground = getComputedStyle(section.querySelector(".certificate-image")).backgroundColor;
       return {
         followsBooking: section.previousElementSibling?.id === "booking",
         precedesFooter: section.nextElementSibling?.matches("footer.site-footer"),
         headingCenter: headingBox.x + headingBox.width / 2,
         galleryCenter: galleryBox.x + galleryBox.width / 2,
         pageCenter: window.innerWidth / 2,
+        galleryMatchesSection: ["rgba(0, 0, 0, 0)", sectionBackground].includes(galleryBackground),
+        imageMatchesSection: ["rgba(0, 0, 0, 0)", sectionBackground].includes(imageBackground),
       };
     });
     assert.equal(placement.followsBooking, true);
     assert.equal(placement.precedesFooter, true);
     assert.ok(Math.abs(placement.headingCenter - placement.pageCenter) < 1);
     assert.ok(Math.abs(placement.galleryCenter - placement.pageCenter) < 1);
+    assert.equal(placement.galleryMatchesSection, true);
+    assert.equal(placement.imageMatchesSection, true);
 
     for (const [index, name] of images.entries()) {
       const path = `/certificates/${name}`;
