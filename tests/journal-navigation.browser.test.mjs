@@ -152,6 +152,23 @@ for (const locale of locales) {
     await page.getByRole("heading", { level: 1, name: second.title[locale.code], exact: true }).waitFor();
   });
 
+  test(`${locale.code}: certificate heading stays on one line when it fits`, async (t) => {
+    const page = await browser.newPage({ viewport: { width: 583, height: 844 } });
+    t.after(() => page.close());
+    const response = await page.goto(`${baseUrl}/${locale.query}`);
+    assert.equal(response.status(), 200);
+    await page.waitForLoadState("networkidle");
+
+    const heading = page.locator("#certificates h2");
+    assert.equal(await heading.textContent(), locale.code === "ru" ? "Дипломы и сертификаты" : "Diplomas and Certificates");
+    const lineCount = await heading.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return range.getClientRects().length;
+    });
+    assert.equal(lineCount, 1);
+  });
+
   test(`${locale.code}: browse certificates and open a full-size document`, async (t) => {
     const page = await browser.newPage({
       viewport: locale.code === "ru" ? { width: 320, height: 844 } : { width: 1280, height: 900 },
@@ -166,8 +183,8 @@ for (const locale of locales) {
     }
 
     const labels = locale.code === "ru"
-      ? { region: "Мои дипломы и сертификаты", next: "Следующий документ", previous: "Предыдущий документ", document: "Документ", view: "Открыть в полном размере" }
-      : { region: "My diplomas and certificates", next: "Next document", previous: "Previous document", document: "Document", view: "View full size" };
+      ? { region: "Дипломы и сертификаты", next: "Следующий документ", previous: "Предыдущий документ", document: "Документ", view: "Открыть в полном размере" }
+      : { region: "Diplomas and Certificates", next: "Next document", previous: "Previous document", document: "Document", view: "View full size" };
     const images = [
       "hair-master-diploma.jpg",
       "hair-master-certificate.jpg",

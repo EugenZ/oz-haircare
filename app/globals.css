@@ -88,8 +88,8 @@ h1 em, h2 em { color: var(--clay); font-style: italic; }
 .ticker-track i { font-family: var(--sans); font-size: 11px; font-style: normal; }
 @keyframes ticker { from { transform: translateX(-8%); } to { transform: translateX(-50%); } }
 
-.section-intro h2, .certificates h2 { font-size: clamp(42px, 5vw, 72px); line-height: .97; max-width: 750px; }
-.section-intro h2 { margin-bottom: 0; }
+.section-intro h2, .certificates h2 { font-size: clamp(42px, 5vw, 72px); line-height: .97; }
+.section-intro h2 { margin-bottom: 0; max-width: 750px; }
 .about { background: var(--paper); }
 .about-grid { display: grid; gap: 4vw 6vw; grid-template-columns: minmax(0, 44%) 1fr; align-items: start; margin-top: 74px; }
 .about-stack { display: flex; flex-direction: column; gap: 34px; }

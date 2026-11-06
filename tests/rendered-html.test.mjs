@@ -402,7 +402,7 @@ test("keeps core client interactions wired", async () => {
   assert.match(page, /setOpenService/);
   assert.match(page, /aboutPhotos/);
   assert.match(page, /setAboutPhotoIndex/);
-  assert.match(page, /Мои дипломы и сертификаты/);
+  assert.match(page, /Дипломы и сертификаты/);
   assert.match(page, /setCertificateIndex/);
   assert.match(page, /articlesGridRef/);
   assert.match(page, /scrollJournal/);
